@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /private
+
+# Sitemap location
+Sitemap: https://moshschool-vgvdjk76.manus.space/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1
