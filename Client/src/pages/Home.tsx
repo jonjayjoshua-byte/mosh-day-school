@@ -205,7 +205,7 @@ export default function Home() {
             <div className="relative">
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src=https://i.ibb.co/Vpr1683K/IMG-20260528-WA0094.jpgp"
+                  src=https://i.ibb.co/Vpr1683K/IMG-20260528-WA0094.jpg"
                   alt="Happy children learning"
                   className="w-full h-auto object-cover"
                 />
