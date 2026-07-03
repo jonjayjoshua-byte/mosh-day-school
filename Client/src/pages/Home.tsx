@@ -39,32 +39,34 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Image Upload Logic to ImgBB Cloud
+  // Image Upload Logic to Public Cloud (Bypassing API keys completely)
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("file", file); // tmpfiles.org expects the key to be named 'file'
 
     try {
-      const response = await fetch("https://api.imgbb.com/1/upload?key=chv_c370_c0f8664bbce1f9a0c4f346b38cbb271a069df9cd", {
+      const response = await fetch("https://tmpfiles.org/api/v1/upload", {
         method: "POST",
         body: formData,
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        setStudentImageUrl(data.data.url); // Permanent cloud web URL!
-        alert("Student image uploaded to cloud successfully! 🚀");
+      if (response.ok && data.status === "success") {
+        // Formats the viewing link into a direct asset link for image tags
+        const directUrl = data.data.url.replace("tmpfiles.org/", "tmpfiles.org/dl/");
+        setStudentImageUrl(directUrl); 
+        alert("Image uploaded to cloud successfully! 🚀");
       } else {
-        alert("Image upload failed. Please try again.");
+        alert("Upload failed. Try a smaller file size.");
       }
     } catch (error) {
-      console.error("Error uploading image:", error);
-      alert("An error occurred during image upload.");
+      console.error("Upload error details:", error);
+      alert("Network error occurred during upload.");
     } finally {
       setUploading(false);
     }
@@ -203,7 +205,7 @@ export default function Home() {
             <div className="relative">
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src="/manus-storage/IMG-20260528-WA0094_b923399a.jpg"
+                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663667293949/VGVDjK76hzyaqsZKMquca2/hero-children-learning-4xJUZzaX7nPBUeXoKctTxr.webp"
                   alt="Happy children learning"
                   className="w-full h-auto object-cover"
                 />
@@ -231,7 +233,7 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative rounded-2xl overflow-hidden shadow-lg">
               <img
-                src="/manus-storage/IMG-20260528-WA0099_0eff059e.jpg"
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663667293949/VGVDjK76hzyaqsZKMquca2/classroom-activities-gnLbegz26EbmTaT7toqMFZ.webp"
                 alt="Classroom activities"
                 className="w-full h-auto object-cover"
               />
@@ -328,7 +330,7 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-8">
             {[
               { title: "ICT Lab", desc: "State-of-the-art computer lab with modern equipment for digital literacy", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663667293949/VGVDjK76hzyaqsZKMquca2/classroom-activities-gnLbegz26EbmTaT7toqMFZ.webp" },
-              { title: "Playground", desc: "Safe, spacious playground with modern equipment for physical development", image: "/manus-storage/IMG-20260528-WA0093_7220862a.jpg" },
+              { title: "Playground", desc: "Safe, spacious playground with modern equipment for physical development", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663667293949/VGVDjK76hzyaqsZKMquca2/playground-sports-Ucjzkrnx77zdWAnGeavuc4.webp" },
               { title: "Learning Classrooms", desc: "Bright, comfortable classrooms designed for optimal learning experience", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663667293949/VGVDjK76hzyaqsZKMquca2/hero-children-learning-4xJUZzaX7nPBUeXoKctTxr.webp" },
               { title: "Sports Area", desc: "Dedicated space for sports training and physical activities", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663667293949/VGVDjK76hzyaqsZKMquca2/playground-sports-Ucjzkrnx77zdWAnGeavuc4.webp" },
             ].map((facility, i) => (
