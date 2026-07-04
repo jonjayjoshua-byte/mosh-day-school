@@ -115,7 +115,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* --- PRESTIGIOUS BLUE-THEMED PRINT ONLY HEADER --- */}
+      {/* PRESTIGIOUS BLUE-THEMED PRINT ONLY HEADER */}
       <div className="print-only-header hidden text-center space-y-1 pt-2 mb-3 border-b-2 border-primary pb-2">
         <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center mx-auto mb-1 shadow-xs">
           <BookOpen className="w-5 h-5" />
@@ -229,8 +229,8 @@ export default function Dashboard() {
           <div className="p-2 bg-muted/40 rounded-2xl border border-border/60 print:bg-transparent print:border-none print:p-0">
             <p className="text-xs text-foreground/80 italic font-semibold print:text-slate-800">
               {reportCard.length > 0 
-                ? `"${reportCard[0]?.remark || 'Keep up the brilliant momentum!'}"` 
-                : '"Profile registered. Performance assessment matrix pending academic department configuration cycle."'}
+                ? `"${reportCard[0]?.remark || 'No remark assigned yet.'}"` 
+                : '"No academic record evaluation assigned yet."'}
             </p>
             <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-1.5 text-[10px] no-print">
               <div>
@@ -242,7 +242,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* --- COMPACT OFFICIAL SIGNATURE SIGNOFF STRIP --- */}
+        {/* COMPACT OFFICIAL SIGNATURE SIGNOFF STRIP */}
         <div className="print-signoff hidden pt-4 grid grid-cols-2 gap-8 text-center text-[10px] font-bold text-slate-900">
           <div className="space-y-4">
             <div className="border-b border-slate-400 w-32 mx-auto h-3"></div>
