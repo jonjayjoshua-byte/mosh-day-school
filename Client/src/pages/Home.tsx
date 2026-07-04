@@ -203,18 +203,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 4. INTERACTIVE PORTAL ACCOUNT MANAGER */}
-        <section id="portal-section" className="bg-card rounded-3xl shadow-xl border border-border overflow-hidden">
-          <div className="bg-gradient-to-br from-primary to-primary/90 text-white p-6">
-            <span className="text-[9px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full">
-              MDS Portal v2.0
-            </span>
-            <h2 className="text-lg font-bold mt-3 mb-1">Secure Gateway</h2>
-            <p className="text-xs text-white/80 leading-relaxed font-medium">
-              Setup database profile fields seamlessly. Manage scores, report card entries, and check student dashboards.
-            </p>
-          </div>
-
+        {/* 4. INTERACTIVE PORTAL ACCOUNT MANAGER (SECURE GATEWAY HEADER REMOVED) */}
+        <section id="portal-section" className="bg-white rounded-3xl shadow-xl border border-border overflow-hidden">
           <div className="p-6">
             <h3 className="text-base font-black text-primary text-center mb-0.5">
               {isLoginMode ? "Student Portal Login" : "Pupil Profile Registration"}
@@ -292,7 +282,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 5. FEATURES GRID */}
+        {/* 5. EXPANDED FEATURES GRID (8 RICH CARDS) */}
         <section id="why-us" className="space-y-4">
           <div className="text-center">
             <h2 className="text-lg font-black text-primary uppercase tracking-wide">Why Choose Us?</h2>
@@ -301,12 +291,16 @@ export default function Home() {
 
           <div className="grid grid-cols-2 gap-3">
             {[
-              { icon: <Users className="w-4 h-4 text-primary" />, title: "Qualified Teachers", desc: "Devoted to complete grooming." },
-              { icon: <Zap className="w-4 h-4 text-primary" />, title: "ICT Learning", desc: "Interactive digital tools." },
-              { icon: <Trophy className="w-4 h-4 text-primary" />, title: "Chess Training", desc: "Boosts critical thinking strategy." },
-              { icon: <Shield className="w-4 h-4 text-primary" />, title: "Safe Environment", desc: "Structures built for total safety." }
+              { icon: <Users className="w-4 h-4 text-primary" />, title: "Qualified Teachers", desc: "Devoted instructors committed to character building." },
+              { icon: <Zap className="w-4 h-4 text-primary" />, title: "ICT Learning", desc: "Early introduction to basic interactive digital tools." },
+              { icon: <Trophy className="w-4 h-4 text-primary" />, title: "Chess Training", desc: "Strategic exercises designed to boost critical thinking." },
+              { icon: <Shield className="w-4 h-4 text-primary" />, title: "Safe Environment", desc: "Secured structural setups built for total peace of mind." },
+              { icon: <Dumbbell className="w-4 h-4 text-primary" />, title: "Sports Activities", desc: "Healthy physical games supporting absolute coordination." },
+              { icon: <Sparkles className="w-4 h-4 text-primary" />, title: "Modern Methods", desc: "Using a standard structured custom curriculum safely." },
+              { icon: <Gamepad2 className="w-4 h-4 text-primary" />, title: "Playground", desc: "Equipped recreational spaces for fun social development." },
+              { icon: <BookOpen className="w-4 h-4 text-primary" />, title: "Moral Grooming", desc: "Deep core foundational focus on discipline and high integrity." }
             ].map((item, idx) => (
-              <Card key={idx} className="p-4 text-center border border-border shadow-xs rounded-2xl bg-card flex flex-col items-center justify-center min-h-[110px]">
+              <Card key={idx} className="p-4 text-center border border-border shadow-xs rounded-2xl bg-card flex flex-col items-center justify-center min-h-[125px]">
                 <div className="w-8 h-8 bg-muted rounded-xl flex items-center justify-center mb-2 shrink-0">
                   {item.icon}
                 </div>
