@@ -5,42 +5,58 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
 import { Plus, Award, Loader2, RefreshCw, Lock, Trash2, KeyRound, Save, X } from "lucide-react";
 
+interface Student {
+  admission_no: string;
+  full_name: string;
+  class: string;
+  portal_password?: string;
+  student_password?: string;
+  parent_phone?: string;
+  term?: string;
+}
+
+interface GradeRow {
+  subject: string;
+  ca: string;
+  exam: string;
+  grade: string;
+}
+
 export default function AdminPortal() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [adminPassword, setAdminPassword] = useState("");
-  const [students, setStudents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [adminPassword, setAdminPassword] = useState<string>("");
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   
   // Search and Filter States
-  const [searchTerm, setSearchTerm] = useState("");
-  const [classFilter, setClassFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [classFilter, setClassFilter] = useState<string>("All");
 
   // Global Term State
-  const [activeTerm, setActiveTerm] = useState("Third Term");
+  const [activeTerm, setActiveTerm] = useState<string>("Third Term");
 
   // Registration states
-  const [fullName, setFullName] = useState("");
-  const [admissionNo, setAdmissionNo] = useState("");
-  const [className, setClassName] = useState("");
-  const [parentPhone, setParentPhone] = useState("");
-  const [studentPassword, setStudentPassword] = useState("");
+  const [fullName, setFullName] = useState<string>("");
+  const [admissionNo, setAdmissionNo] = useState<string>("");
+  const [className, setClassName] = useState<string>("");
+  const [parentPhone, setParentPhone] = useState<string>("");
+  const [studentPassword, setStudentPassword] = useState<string>("");
 
   // Grade states
-  const [selectedAdmNo, setSelectedAdmNo] = useState("");
-  const [teacherName, setTeacherName] = useState("");
-  const [overallRemark, setOverallRemark] = useState("");
-  const [gradeRows, setGradeRows] = useState([{ subject: "", ca: "", exam: "", grade: "" }]);
+  const [selectedAdmNo, setSelectedAdmNo] = useState<string>("");
+  const [teacherName, setTeacherName] = useState<string>("");
+  const [overallRemark, setOverallRemark] = useState<string>("");
+  const [gradeRows, setGradeRows] = useState<GradeRow[]>([{ subject: "", ca: "", exam: "", grade: "" }]);
 
   const fetchStudents = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.from("students").select("*").order("full_name", { ascending: true });
       if (error) throw error;
-      setStudents(data || []);
+      setStudents((data as Student[]) || []);
     } catch (err) { 
       console.error(err); 
-    }
-    finally { 
+    } finally { 
       setLoading(false); 
     }
   };
@@ -62,7 +78,7 @@ export default function AdminPortal() {
     }
   }, [isAuthenticated]);
 
-  const calculateGrade = (ca: string, exam: string) => {
+  const calculateGrade = (ca: string, exam: string): string => {
     const total = (parseInt(ca) || 0) + (parseInt(exam) || 0);
     if (total >= 70) return "A";
     if (total >= 60) return "B";
@@ -80,9 +96,12 @@ export default function AdminPortal() {
     setGradeRows(updated);
   };
   
-  const updateRow = (index: number, field: string, value: string) => {
+  const updateRow = (index: number, field: keyof GradeRow, value: string) => {
     const updated = [...gradeRows];
-    updated[index][field as keyof typeof updated[0]] = value;
+    updated[index] = {
+      ...updated[index],
+      [field]: value
+    };
     
     if (field === "ca" || field === "exam") {
       updated[index].grade = calculateGrade(updated[index].ca, updated[index].exam);
@@ -223,7 +242,7 @@ export default function AdminPortal() {
         </header>
 
         {/* Global Term Management Panel */}
-        <Card className="p-5 rounded-3xl border bg-white shadow-xs">
+        <Card className="p-5 rounded-3xl border bg-white shadow-sm">
           <h2 className="text-xs font-black uppercase text-primary mb-3">Global Active Calendar Control</h2>
           <div className="grid grid-cols-3 gap-2">
             {["First Term", "Second Term", "Third Term"].map((term) => (
@@ -240,6 +259,7 @@ export default function AdminPortal() {
         </Card>
 
         <div className="grid md:grid-cols-2 gap-6">
+          {/* Register Student Section */}
           <Card className="p-5 rounded-3xl border bg-white space-y-4">
             <h2 className="text-xs font-black uppercase text-primary border-b pb-2">Register Student</h2>
             <form onSubmit={handleCreateStudent} className="space-y-3">
@@ -255,13 +275,18 @@ export default function AdminPortal() {
             </form>
           </Card>
 
+          {/* Bulk Subject Upload Section */}
           <Card className="p-5 rounded-3xl border bg-white space-y-4">
             <h2 className="text-xs font-black uppercase text-primary border-b pb-2 flex items-center gap-2">
               <Award className="w-4 h-4" /> Bulk Subject Upload
             </h2>
             <select value={selectedAdmNo} onChange={e => setSelectedAdmNo(e.target.value)} className="w-full border rounded-xl p-2 text-xs">
               <option value="">-- Select Student --</option>
-              {students.map(s => <option key={s.admission_no} value={s.admission_no}>{s.full_name}</option>)}
+              {students.map((s: Student) => (
+                <option key={s.admission_no} value={s.admission_no}>
+                  {s.full_name}
+                </option>
+              ))}
             </select>
             <Input placeholder="Teacher Name" value={teacherName} onChange={e => setTeacherName(e.target.value)} />
             <Input placeholder="Overall Teacher Remark" value={overallRemark} onChange={e => setOverallRemark(e.target.value)} />
@@ -273,7 +298,7 @@ export default function AdminPortal() {
                     <Input placeholder="Subj" value={row.subject} onChange={e => updateRow(i, "subject", e.target.value)} className="text-[10px]" />
                     <Input placeholder="CA" value={row.ca} onChange={e => updateRow(i, "ca", e.target.value)} className="text-[10px]" />
                     <Input placeholder="Ex" value={row.exam} onChange={e => updateRow(i, "exam", e.target.value)} className="text-[10px]" />
-                    <Input placeholder="Gr" value={row.grade} onChange={e => updateRow(i, "grade", e.target.value)} className="text-[10px]" />
+                    <Input placeholder="Gr" value={row.grade} readOnly className="text-[10px] bg-muted/30" />
                   </div>
                   <Button onClick={() => removeRow(i)} variant="ghost" size="sm" className="text-red-500 p-2">
                     <X className="w-4 h-4" />
@@ -282,12 +307,13 @@ export default function AdminPortal() {
               ))}
               <Button onClick={addRow} variant="outline" size="sm" className="w-full text-xs">+ Add Subject Row</Button>
             </div>
-            <Button onClick={handlePublishAll} className="w-full bg-emerald-600">
+            <Button onClick={handlePublishAll} className="w-full bg-emerald-600 text-white">
               <Save className="w-4 h-4 mr-2" /> Publish All Subjects
             </Button>
           </Card>
         </div>
 
+        {/* System Directory Section */}
         <Card className="p-5 rounded-3xl border bg-white">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
             <h2 className="text-xs font-black uppercase text-primary">System Directory</h2>
@@ -298,7 +324,7 @@ export default function AdminPortal() {
                 onChange={e => setSearchTerm(e.target.value)} 
                 className="text-xs"
               />
-              <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="border rounded-xl px-3 text-xs">
+              <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="border rounded-xl px-3 text-xs bg-white">
                 <option value="All">All Classes</option>
                 <option value="Kindergarten">Kindergarten</option>
                 <option value="Nursery 1">Nursery 1</option>
@@ -319,30 +345,30 @@ export default function AdminPortal() {
           ) : (
             <div className="divide-y text-xs">
               {students
-                .filter(s => 
+                .filter((s: Student) => 
                   (classFilter === "All" || s.class === classFilter) &&
-                  (s.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                   s.admission_no.toLowerCase().includes(searchTerm.toLowerCase()))
+                  ((s.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+                   (s.admission_no || "").toLowerCase().includes(searchTerm.toLowerCase()))
                 )
-                .map(s => (
-                <div key={s.admission_no} className="py-3 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold">{s.full_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.admission_no} • {s.class} • Pass: {s.portal_password}</p>
+                .map((s: Student) => (
+                  <div key={s.admission_no} className="py-3 flex justify-between items-center">
+                    <div>
+                      <p className="font-bold">{s.full_name}</p>
+                      <p className="text-[10px] text-muted-foreground">{s.admission_no} • {s.class} • Pass: {s.portal_password || ""}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button onClick={() => handleClearGrades(s.admission_no)} size="sm" variant="ghost">
+                        <Trash2 className="w-4 h-4 text-orange-500" />
+                      </Button>
+                      <Button onClick={() => handleResetPassword(s.admission_no, s.full_name || "")} size="sm" variant="ghost">
+                        <KeyRound className="w-4 h-4 text-blue-600" />
+                      </Button>
+                      <Button onClick={() => handleDeleteStudent(s.admission_no)} size="sm" variant="destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button onClick={() => handleClearGrades(s.admission_no)} size="sm" variant="ghost">
-                      <Trash2 className="w-4 h-4 text-orange-500" />
-                    </Button>
-                    <Button onClick={() => handleResetPassword(s.admission_no, s.full_name)} size="sm" variant="ghost">
-                      <KeyRound className="w-4 h-4 text-blue-600" />
-                    </Button>
-                    <Button onClick={() => handleDeleteStudent(s.admission_no)} size="sm" variant="destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </Card>
