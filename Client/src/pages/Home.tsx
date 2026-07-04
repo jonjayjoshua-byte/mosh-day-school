@@ -81,7 +81,6 @@ export default function Home() {
       if (result.success) {
         // 3. Replaced alert box with professional route jump!
         setLocation(`/dashboard?admissionNo=${encodeURIComponent(admissionNo)}`);
- 
       } else {
         alert(result.error);
       }
