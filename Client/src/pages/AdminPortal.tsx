@@ -64,9 +64,9 @@ export default function AdminPortal() {
     try {
       const { error } = await supabase.from("students").insert([
         { 
-          full_name: fullName, 
+          full_name: fullName.trim(), 
           admission_no: admissionNo.trim(), 
-          class: className, 
+          class: className.trim(), 
           term 
         }
       ]);
@@ -91,13 +91,13 @@ export default function AdminPortal() {
     try {
       const { error } = await supabase.from("grades").insert([
         {
-          admission_no: selectedAdmNo,
-          subject,
+          admission_no: selectedAdmNo.trim(),
+          subject: subject.trim(),
           ca: parseInt(caScore),
           exam: parseInt(examScore),
-          grade: grade.toUpperCase(),
-          remark: teacherRemark,
-          teacher_name: teacherName
+          grade: grade.trim().toUpperCase(),
+          remark: teacherRemark.trim(),
+          teacher_name: teacherName.trim()
         }
       ]);
       if (error) throw error;
@@ -120,7 +120,7 @@ export default function AdminPortal() {
       const { error } = await supabase
         .from("grades")
         .delete()
-        .ilike("admission_no", admNo);
+        .eq("admission_no", admNo.trim());
         
       if (error) throw error;
       alert(`All previous grades wiped successfully for ${admNo}!`);
@@ -129,7 +129,7 @@ export default function AdminPortal() {
     }
   };
 
-  // --- STRICT CONFIGURATION TARGETING ONLY VALID SCHEMA COLUMNS ---
+  // --- EXACT STRING ROW TARGETING LOGIC ---
   const handlePromoteOrChange = async (admNo: string, currentClass: string, currentTerm: string) => {
     const newClass = prompt("Enter new Class (Leave blank to keep current):", currentClass);
     const newTerm = prompt("Enter new Term (Leave blank to keep current):", currentTerm);
@@ -141,13 +141,13 @@ export default function AdminPortal() {
       if (newClass && newClass.trim() !== "") updates.class = newClass.trim();
       if (newTerm && newTerm.trim() !== "") updates.term = newTerm.trim();
 
-      // Only invoke update if fields were actually altered
       if (Object.keys(updates).length === 0) return;
 
+      // Swapped .ilike() for strict .eq() parsing to bypass indexing bugs
       const { error } = await supabase
         .from("students")
         .update(updates)
-        .ilike("admission_no", admNo.trim());
+        .eq("admission_no", admNo.trim());
 
       if (error) throw error;
       
