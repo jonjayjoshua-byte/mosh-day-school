@@ -11,15 +11,17 @@ export default function AdminPortal() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // New States for Search and Class Filter
+  // Search and Filter States
   const [searchTerm, setSearchTerm] = useState("");
   const [classFilter, setClassFilter] = useState("All");
+
+  // Global Term State
+  const [activeTerm, setActiveTerm] = useState("Third Term");
 
   // Registration states
   const [fullName, setFullName] = useState("");
   const [admissionNo, setAdmissionNo] = useState("");
   const [className, setClassName] = useState("");
-  const [term, setTerm] = useState("Third Term");
   const [parentPhone, setParentPhone] = useState("");
   const [studentPassword, setStudentPassword] = useState("");
 
@@ -43,8 +45,21 @@ export default function AdminPortal() {
     }
   };
 
+  const fetchSettings = async () => {
+    try {
+      const { data, error } = await supabase.from("settings").select("value").eq("key", "active_term").single();
+      if (error) throw error;
+      if (data) setActiveTerm(data.value);
+    } catch (err) {
+      console.error("Error loading active term settings:", err);
+    }
+  };
+
   useEffect(() => { 
-    if (isAuthenticated) fetchStudents(); 
+    if (isAuthenticated) {
+      fetchStudents(); 
+      fetchSettings();
+    }
   }, [isAuthenticated]);
 
   const calculateGrade = (ca: string, exam: string) => {
@@ -86,6 +101,17 @@ export default function AdminPortal() {
     }
   };
 
+  const handleUpdateTerm = async (newTerm: string) => {
+    try {
+      const { error } = await supabase.from("settings").update({ value: newTerm }).eq("key", "active_term");
+      if (error) throw error;
+      setActiveTerm(newTerm);
+      alert(`Global active term updated to ${newTerm}`);
+    } catch (err: any) {
+      alert(`Error updating term: ${err.message}`);
+    }
+  };
+
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -93,7 +119,7 @@ export default function AdminPortal() {
         full_name: fullName.trim(), 
         admission_no: admissionNo.trim(), 
         class: className.trim(), 
-        term: term, 
+        term: activeTerm, 
         parent_phone: parentPhone.trim(), 
         portal_password: studentPassword.trim(), 
         student_password: studentPassword.trim() 
@@ -196,6 +222,23 @@ export default function AdminPortal() {
           </Button>
         </header>
 
+        {/* Global Term Management Panel */}
+        <Card className="p-5 rounded-3xl border bg-white shadow-xs">
+          <h2 className="text-xs font-black uppercase text-primary mb-3">Global Active Calendar Control</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {["First Term", "Second Term", "Third Term"].map((term) => (
+              <Button 
+                key={term}
+                variant={activeTerm === term ? "default" : "outline"}
+                onClick={() => handleUpdateTerm(term)}
+                className="text-xs font-bold rounded-xl py-2"
+              >
+                {term}
+              </Button>
+            ))}
+          </div>
+        </Card>
+
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-5 rounded-3xl border bg-white space-y-4">
             <h2 className="text-xs font-black uppercase text-primary border-b pb-2">Register Student</h2>
@@ -205,11 +248,9 @@ export default function AdminPortal() {
               <Input placeholder="Class" value={className} onChange={e => setClassName(e.target.value)} />
               <Input placeholder="Parent Phone" value={parentPhone} onChange={e => setParentPhone(e.target.value)} />
               <Input placeholder="Set Password" value={studentPassword} onChange={e => setStudentPassword(e.target.value)} />
-              <select value={term} onChange={e => setTerm(e.target.value)} className="w-full border rounded-xl p-2 text-xs">
-                <option value="First Term">First Term</option>
-                <option value="Second Term">Second Term</option>
-                <option value="Third Term">Third Term</option>
-              </select>
+              <div className="p-3 bg-muted/30 border border-dashed rounded-xl text-[11px] font-semibold text-muted-foreground">
+                Automatic Assigned Cycle: <span className="text-primary font-black uppercase">{activeTerm}</span>
+              </div>
               <Button type="submit" className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Student</Button>
             </form>
           </Card>
@@ -258,16 +299,16 @@ export default function AdminPortal() {
                 className="text-xs"
               />
               <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="border rounded-xl px-3 text-xs">
-                 <option value="All">All Classes</option>
-                 <option value="Kindergarten">Kindergarten</option>
-                 <option value="Nursery 1">Nursery 1</option>
-                 <option value="Nursery 2">Nursery 2</option>
-                 <option value="Primary 1">Primary 1</option>
-                 <option value="Primary 2">Primary 2</option>
-                 <option value="Primary 3">Primary 3</option>
-                 <option value="Primary 4">Primary 4</option>
-                 <option value="Primary 5">Primary 5</option>
-                </select>
+                <option value="All">All Classes</option>
+                <option value="Kindergarten">Kindergarten</option>
+                <option value="Nursery 1">Nursery 1</option>
+                <option value="Nursery 2">Nursery 2</option>
+                <option value="Primary 1">Primary 1</option>
+                <option value="Primary 2">Primary 2</option>
+                <option value="Primary 3">Primary 3</option>
+                <option value="Primary 4">Primary 4</option>
+                <option value="Primary 5">Primary 5</option>
+              </select>
             </div>
           </div>
           
