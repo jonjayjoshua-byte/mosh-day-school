@@ -129,8 +129,8 @@ export default function AdminPortal() {
     }
   };
 
-  // --- ARMORED VIA UNIQUE TABLE INDEX ID LOOKUP ---
-  const handlePromoteOrChange = async (studentId: any, currentClass: string, currentTerm: string) => {
+  // --- FIXED BY TARGETING THE ACTUAL ADMISSION_NO VALUE INSTEAD OF NONEXISTENT ID ---
+  const handlePromoteOrChange = async (admNo: string, currentClass: string, currentTerm: string) => {
     const newClass = prompt("Enter new Class (Leave blank to keep current):", currentClass);
     const newTerm = prompt("Enter new Term (Leave blank to keep current):", currentTerm);
     
@@ -143,11 +143,13 @@ export default function AdminPortal() {
 
       if (Object.keys(updates).length === 0) return;
 
-      // Targets the absolute row ID instead of parsing text layouts
+      // Safely trim and reference the valid column name
+      const targetAdmissionNo = admNo.trim();
+
       const { error } = await supabase
         .from("students")
         .update(updates)
-        .eq("id", studentId);
+        .eq("admission_no", targetAdmissionNo);
 
       if (error) throw error;
       
@@ -265,7 +267,7 @@ export default function AdminPortal() {
           ) : (
             <div className="divide-y text-xs font-medium max-h-60 overflow-y-auto">
               {students.map((s, index) => (
-                <div key={`${s.id || index}`} className="py-3 flex justify-between items-center gap-2">
+                <div key={`${s.admission_no}-${index}`} className="py-3 flex justify-between items-center gap-2">
                   <div>
                     <p className="font-bold text-foreground">{s.full_name}</p>
                     <p className="text-[10px] text-muted-foreground">
@@ -277,7 +279,7 @@ export default function AdminPortal() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Button 
-                      onClick={() => handlePromoteOrChange(s.id, s.class, s.term)}
+                      onClick={() => handlePromoteOrChange(s.admission_no, s.class, s.term)}
                       variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50"
                     >
                       Edit Class/Term
