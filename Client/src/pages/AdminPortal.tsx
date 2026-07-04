@@ -130,7 +130,7 @@ export default function AdminPortal() {
     }
   };
 
-  // --- CHANGED HERE: Uses admissionNo instead of id to update the record ---
+  // --- UPDATED FOR COMPATIBILITY & FORCE RELOAD ---
   const handlePromoteOrChange = async (admNo: string, currentClass: string, currentTerm: string) => {
     const newClass = prompt("Enter new Class (Leave blank to keep current):", currentClass);
     const newTerm = prompt("Enter new Term (Leave blank to keep current):", currentTerm);
@@ -138,18 +138,29 @@ export default function AdminPortal() {
     if (newClass === null && newTerm === null) return;
 
     try {
+      // We pass both variations just in case your database schema uses "student_class" or "current_term"
       const updates: any = {};
-      if (newClass) updates.class = newClass;
-      if (newTerm) updates.term = newTerm;
+      if (newClass) {
+        updates.class = newClass;
+        updates.student_class = newClass; 
+      }
+      if (newTerm) {
+        updates.term = newTerm;
+        updates.current_term = newTerm;
+      }
 
       const { error } = await supabase
         .from("students")
         .update(updates)
-        .ilike("admission_no", admNo); // Targets the custom string key column
+        .ilike("admission_no", admNo.trim());
 
       if (error) throw error;
+      
       alert("Student profile metadata records synchronized!");
-      fetchStudents();
+      
+      // Force an immediate re-fetch from the database to update the view
+      await fetchStudents();
+      
     } catch (err: any) {
       alert(err.message);
     }
@@ -236,7 +247,6 @@ export default function AdminPortal() {
               >
                 <option value="">-- Select Target Student --</option>
                 {students.map((s, index) => (
-                  // Using admission_no joined with index as an alternative unique key for the dropdown loop element
                   <option key={`${s.admission_no}-${index}`} value={s.admission_no}>{s.full_name}</option>
                 ))}
               </select>
@@ -268,12 +278,16 @@ export default function AdminPortal() {
                 <div key={`${s.admission_no}-${index}`} className="py-3 flex justify-between items-center gap-2">
                   <div>
                     <p className="font-bold text-foreground">{s.full_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.admission_no} &bull; <span className="text-primary font-bold">{s.class} ({s.term})</span></p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {s.admission_no} &bull;{" "}
+                      <span className="text-primary font-bold">
+                        {s.class || s.student_class} ({s.term || s.current_term})
+                      </span>
+                    </p>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Button 
-                      // CHANGED HERE: Pass admission_no instead of id
-                      onClick={() => handlePromoteOrChange(s.admission_no, s.class, s.term)}
+                      onClick={() => handlePromoteOrChange(s.admission_no, s.class || s.student_class, s.term || s.current_term)}
                       variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50"
                     >
                       Edit Class/Term
