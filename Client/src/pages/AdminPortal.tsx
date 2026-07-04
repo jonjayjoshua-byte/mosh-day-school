@@ -3,9 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
-import { Plus, User, Award, Loader2, RefreshCw } from "lucide-react";
+import { Plus, User, Award, Loader2, RefreshCw, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function AdminPortal() {
+  // Gate Security States
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Core Admin States
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -39,8 +45,22 @@ export default function AdminPortal() {
   };
 
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    if (isAuthenticated) {
+      fetchStudents();
+    }
+  }, [isAuthenticated]);
+
+  // Handle Admin Gate Login
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // CHANGE THIS STRING TO SET YOUR SECRET ADMIN PASSWORD
+    if (adminPassword === "moshadmin2026") {
+      setIsAuthenticated(true);
+    } else {
+      alert("Invalid Admin Gateway Passkey!");
+      setAdminPassword("");
+    }
+  };
 
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +116,53 @@ export default function AdminPortal() {
     }
   };
 
+  // 1. RENDER GATEWAY LOCK SCREEN IF NOT AUTHENTICATED
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4 text-foreground font-sans antialiased">
+        <Card className="w-full max-w-md p-6 rounded-3xl border bg-white space-y-5 shadow-sm text-center">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto text-primary">
+            <Lock className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-black text-primary tracking-tight uppercase">Admin Gate Lock</h1>
+            <p className="text-xs text-muted-foreground font-semibold px-2 mt-1">
+              This area is restricted to authorized school administrators. Enter the system control passkey to unlock.
+            </p>
+          </div>
+
+          <form onSubmit={handleAdminLogin} className="space-y-3 text-left">
+            <div className="relative">
+              <Input 
+                type={showPassword ? "text" : "password"} 
+                placeholder="Enter Staff Admin Password" 
+                value={adminPassword}
+                onChange={e => setAdminPassword(e.target.value)}
+                className="rounded-xl text-xs h-11 pr-10 font-medium"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <Button type="submit" className="w-full rounded-xl text-xs font-bold h-11">
+              Verify & Unlock Panel
+            </Button>
+          </form>
+
+          <a href="/" className="inline-block text-[10px] font-bold text-muted-foreground hover:text-primary transition uppercase tracking-wider underline">
+            &larr; Back to Student Portal Login
+          </a>
+        </Card>
+      </div>
+    );
+  }
+
+  // 2. RENDER FULL MANAGEMENT PANEL IF AUTHENTICATED
   return (
     <div className="min-h-screen bg-muted/20 p-4 md:p-8 text-foreground font-sans antialiased">
       <div className="max-w-4xl mx-auto space-y-6">
