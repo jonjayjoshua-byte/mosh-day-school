@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
-import { Plus, User, Award, Loader2, RefreshCw, Lock, Trash2, KeyRound } from "lucide-react";
+import { Plus, User, Award, Loader2, RefreshCw, Lock, Trash2, KeyRound, Save } from "lucide-react";
 
 export default function AdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -11,6 +11,7 @@ export default function AdminPortal() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Registration and Grade states
   const [fullName, setFullName] = useState("");
   const [admissionNo, setAdmissionNo] = useState("");
   const [className, setClassName] = useState("");
@@ -19,12 +20,8 @@ export default function AdminPortal() {
   const [studentPassword, setStudentPassword] = useState("");
 
   const [selectedAdmNo, setSelectedAdmNo] = useState("");
-  const [subject, setSubject] = useState("");
-  const [caScore, setCaScore] = useState("");
-  const [examScore, setExamScore] = useState("");
-  const [grade, setGrade] = useState("");
-  const [teacherRemark, setTeacherRemark] = useState("");
   const [teacherName, setTeacherName] = useState("");
+  const [gradeRows, setGradeRows] = useState([{ subject: "", ca: "", exam: "", grade: "", remark: "" }]);
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -32,7 +29,7 @@ export default function AdminPortal() {
       const { data, error } = await supabase.from("students").select("*").order("full_name", { ascending: true });
       if (error) throw error;
       setStudents(data || []);
-    } catch (err) { console.error("Error fetching students:", err); }
+    } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
 
@@ -41,13 +38,11 @@ export default function AdminPortal() {
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (adminPassword === "moshadmin2026") setIsAuthenticated(true);
-    else { alert("Invalid Admin Gateway Passkey!"); setAdminPassword(""); }
+    else { alert("Invalid Passkey!"); setAdminPassword(""); }
   };
 
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !admissionNo || !className || !parentPhone || !studentPassword) return alert("Fill all fields!");
-
     try {
       const { error } = await supabase.from("students").insert([{ 
         full_name: fullName.trim(), admission_no: admissionNo.trim(), class: className.trim(), 
@@ -60,137 +55,110 @@ export default function AdminPortal() {
     } catch (err: any) { alert(err.message); }
   };
 
-  // --- NEW: PASSWORD RESET ---
+  // --- BULK GRADE LOGIC ---
+  const addRow = () => setGradeRows([...gradeRows, { subject: "", ca: "", exam: "", grade: "", remark: "" }]);
+  
+  const updateRow = (index: number, field: string, value: string) => {
+    const updated = [...gradeRows];
+    updated[index][field as keyof typeof updated[0]] = value;
+    setGradeRows(updated);
+  };
+
+  const handlePublishAll = async () => {
+    if (!selectedAdmNo || !teacherName) return alert("Select student and enter teacher name!");
+    
+    const payload = gradeRows
+      .filter(r => r.subject !== "")
+      .map(r => ({
+        admission_no: selectedAdmNo,
+        subject: r.subject,
+        ca: parseInt(r.ca) || 0,
+        exam: parseInt(r.exam) || 0,
+        grade: r.grade.toUpperCase(),
+        remark: r.remark,
+        teacher_name: teacherName
+      }));
+
+    const { error } = await supabase.from("grades").insert(payload);
+    if (error) alert(error.message);
+    else {
+      alert("All subjects published successfully!");
+      setGradeRows([{ subject: "", ca: "", exam: "", grade: "", remark: "" }]);
+    }
+  };
+
+  // --- EXISTING UTILS ---
   const handleResetPassword = async (admNo: string, name: string) => {
-    const newPassword = prompt(`Enter new access password for ${name}:`);
-    if (!newPassword || newPassword.trim() === "") return;
-    try {
-      const { error } = await supabase.from("students").update({ 
-        portal_password: newPassword.trim(), student_password: newPassword.trim() 
-      }).eq("admission_no", admNo.trim());
-      if (error) throw error;
-      alert("Password updated!");
+    const newPassword = prompt(`New password for ${name}:`);
+    if (newPassword) {
+      await supabase.from("students").update({ portal_password: newPassword, student_password: newPassword }).eq("admission_no", admNo);
       fetchStudents();
-    } catch (err: any) { alert(err.message); }
+    }
   };
 
-  const handleUploadGrade = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedAdmNo || !subject || !caScore || !examScore || !grade || !teacherRemark || !teacherName) return alert("Fill all fields!");
-    try {
-      const { error } = await supabase.from("grades").insert([{
-        admission_no: selectedAdmNo.trim(), subject: subject.trim(), ca: parseInt(caScore), exam: parseInt(examScore),
-        grade: grade.trim().toUpperCase(), remark: teacherRemark.trim(), teacher_name: teacherName.trim()
-      }]);
-      if (error) throw error;
-      alert(`Grade added!`);
-      setSubject(""); setCaScore(""); setExamScore(""); setGrade(""); setTeacherRemark("");
-    } catch (err: any) { alert(err.message); }
+  const handleDeleteStudent = async (admNo: string) => {
+    if (confirm("Delete student?")) {
+      await supabase.from("grades").delete().eq("admission_no", admNo);
+      await supabase.from("students").delete().eq("admission_no", admNo);
+      fetchStudents();
+    }
   };
 
-  const handleClearScores = async (admNo: string) => {
-    if (!confirm("Wipe all grades?")) return;
-    try { await supabase.from("grades").delete().eq("admission_no", admNo.trim()); await fetchStudents(); } catch (err: any) { alert(err.message); }
-  };
-
-  const handlePromoteOrChange = async (admNo: string, currentClass: string, currentTerm: string) => {
-    const newClass = prompt("New Class:", currentClass); const newTerm = prompt("New Term:", currentTerm);
-    if (!newClass && !newTerm) return;
-    try {
-      await supabase.from("students").update({ class: newClass || currentClass, term: newTerm || currentTerm }).eq("admission_no", admNo.trim());
-      await fetchStudents();
-    } catch (err: any) { alert(err.message); }
-  };
-
-  const handleDeleteStudent = async (admNo: string, name: string) => {
-    if (!confirm(`Delete ${name}?`)) return;
-    try {
-      await supabase.from("grades").delete().eq("admission_no", admNo.trim());
-      await supabase.from("students").delete().eq("admission_no", admNo.trim());
-      await fetchStudents();
-    } catch (err: any) { alert(err.message); }
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md p-6 rounded-3xl border bg-white shadow-sm text-center">
-          <Lock className="w-10 h-10 mx-auto text-primary mb-4" />
-          <h1 className="text-lg font-black text-primary uppercase">Admin Gate Lock</h1>
-          <form onSubmit={handleAdminLogin} className="space-y-3 mt-4">
-            <Input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="Password" />
-            <Button type="submit" className="w-full">Unlock</Button>
-          </form>
-        </Card>
-      </div>
-    );
-  }
+  if (!isAuthenticated) return (
+    <div className="min-h-screen bg-muted/20 flex items-center justify-center p-4">
+      <Card className="w-full max-w-sm p-6 rounded-3xl text-center">
+        <Lock className="w-10 h-10 mx-auto text-primary mb-4" />
+        <Input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="Admin Passkey" className="mb-3" />
+        <Button onClick={handleAdminLogin} className="w-full">Unlock Panel</Button>
+      </Card>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-muted/20 p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        <header className="flex justify-between border-b pb-4">
-          <h1 className="text-xl font-black text-primary uppercase">Mosh Day School</h1>
-          <Button onClick={fetchStudents} size="sm" variant="outline"><RefreshCw className="w-4 h-4 mr-2" /> Reload</Button>
+        <header className="flex justify-between items-center pb-4 border-b">
+          <h1 className="text-xl font-black text-primary uppercase">Admin Portal</h1>
+          <Button onClick={fetchStudents} variant="outline" size="sm"><RefreshCw className="w-4 h-4 mr-2" /> Reload</Button>
         </header>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="p-5 rounded-3xl border bg-white space-y-4">
-            <h2 className="text-xs font-black uppercase text-primary border-b pb-2">Register Student</h2>
-            <form onSubmit={handleCreateStudent} className="space-y-3">
-              <Input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} />
-              <Input placeholder="Admission No" value={admissionNo} onChange={e => setAdmissionNo(e.target.value)} />
-              <Input placeholder="Class" value={className} onChange={e => setClassName(e.target.value)} />
-              <Input placeholder="Parent Phone" value={parentPhone} onChange={e => setParentPhone(e.target.value)} />
-              <Input placeholder="Set Student Password" value={studentPassword} onChange={e => setStudentPassword(e.target.value)} />
-              <select value={term} onChange={e => setTerm(e.target.value)} className="w-full border rounded-xl p-2 text-xs">
-                <option value="First Term">First Term</option>
-                <option value="Second Term">Second Term</option>
-                <option value="Third Term">Third Term</option>
-              </select>
-              <Button type="submit" className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Student</Button>
-            </form>
-          </Card>
-
-          <Card className="p-5 rounded-3xl border bg-white space-y-4">
-            <h2 className="text-xs font-black uppercase text-primary border-b pb-2">Upload Scores</h2>
-            <form onSubmit={handleUploadGrade} className="space-y-3">
-              <select value={selectedAdmNo} onChange={e => setSelectedAdmNo(e.target.value)} className="w-full border rounded-xl p-2 text-xs">
-                <option value="">-- Select Student --</option>
-                {students.map(s => <option key={s.admission_no} value={s.admission_no}>{s.full_name}</option>)}
-              </select>
-              <Input placeholder="Subject" value={subject} onChange={e => setSubject(e.target.value)} />
-              <div className="grid grid-cols-3 gap-2">
-                <Input placeholder="CA" value={caScore} onChange={e => setCaScore(e.target.value)} />
-                <Input placeholder="Exam" value={examScore} onChange={e => setExamScore(e.target.value)} />
-                <Input placeholder="Grade" value={grade} onChange={e => setGrade(e.target.value)} />
+        {/* BULK UPLOAD CARD */}
+        <Card className="p-5 rounded-3xl border bg-white space-y-4">
+          <h2 className="text-xs font-black uppercase text-primary border-b pb-2 flex items-center gap-2">
+            <Award className="w-4 h-4" /> Bulk Subject Upload
+          </h2>
+          <select value={selectedAdmNo} onChange={e => setSelectedAdmNo(e.target.value)} className="w-full border rounded-xl p-2 text-xs">
+            <option value="">-- Select Student --</option>
+            {students.map(s => <option key={s.admission_no} value={s.admission_no}>{s.full_name}</option>)}
+          </select>
+          <Input placeholder="Teacher Name" value={teacherName} onChange={e => setTeacherName(e.target.value)} />
+          
+          <div className="space-y-2">
+            {gradeRows.map((row, i) => (
+              <div key={i} className="grid grid-cols-5 gap-2">
+                <Input placeholder="Subj" value={row.subject} onChange={e => updateRow(i, "subject", e.target.value)} className="col-span-2 text-[10px]" />
+                <Input placeholder="CA" value={row.ca} onChange={e => updateRow(i, "ca", e.target.value)} className="text-[10px]" />
+                <Input placeholder="Ex" value={row.exam} onChange={e => updateRow(i, "exam", e.target.value)} className="text-[10px]" />
+                <Input placeholder="Gr" value={row.grade} onChange={e => updateRow(i, "grade", e.target.value)} className="text-[10px]" />
               </div>
-              <Input placeholder="Teacher Name" value={teacherName} onChange={e => setTeacherName(e.target.value)} />
-              <Input placeholder="Remark" value={teacherRemark} onChange={e => setTeacherRemark(e.target.value)} />
-              <Button type="submit" className="w-full bg-emerald-600">Publish Result</Button>
-            </form>
-          </Card>
-        </div>
+            ))}
+            <Button onClick={addRow} variant="outline" size="sm" className="w-full text-xs">+ Add Row</Button>
+          </div>
+          <Button onClick={handlePublishAll} className="w-full bg-emerald-600"><Save className="w-4 h-4 mr-2" /> Publish All Subjects</Button>
+        </Card>
 
+        {/* DIRECTORY */}
         <Card className="p-5 rounded-3xl border bg-white">
-          <h2 className="text-xs font-black uppercase text-primary mb-3">Live System Directory</h2>
-          {loading ? <Loader2 className="animate-spin mx-auto" /> : (
-            <div className="divide-y text-xs">
-              {students.map(s => (
-                <div key={s.admission_no} className="py-3 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold">{s.full_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.admission_no} • {s.class} • <span className="font-bold text-primary">Pass: {s.portal_password}</span></p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button onClick={() => handleResetPassword(s.admission_no, s.full_name)} size="sm" variant="ghost" className="text-blue-600"><KeyRound className="w-3.5 h-3.5" /></Button>
-                    <Button onClick={() => handlePromoteOrChange(s.admission_no, s.class, s.term)} size="sm" variant="outline">Edit</Button>
-                    <Button onClick={() => handleDeleteStudent(s.admission_no, s.full_name)} size="sm" variant="destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
-                  </div>
-                </div>
-              ))}
+          <h2 className="text-xs font-black uppercase text-primary mb-3">System Directory</h2>
+          {students.map(s => (
+            <div key={s.admission_no} className="py-2 flex justify-between items-center border-b text-xs">
+              <div><p className="font-bold">{s.full_name}</p><p className="text-[10px] text-muted-foreground">{s.admission_no} • Pass: {s.portal_password}</p></div>
+              <div className="flex gap-1">
+                <Button onClick={() => handleResetPassword(s.admission_no, s.full_name)} size="sm" variant="ghost"><KeyRound className="w-4 h-4 text-blue-600" /></Button>
+                <Button onClick={() => handleDeleteStudent(s.admission_no)} size="sm" variant="destructive"><Trash2 className="w-4 h-4" /></Button>
+              </div>
             </div>
-          )}
+          ))}
         </Card>
       </div>
     </div>
