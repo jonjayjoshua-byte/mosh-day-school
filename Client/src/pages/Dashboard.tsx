@@ -7,7 +7,8 @@ import {
   Award, 
   CheckCircle,
   MessageSquare,
-  Loader2
+  Loader2,
+  Printer
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
@@ -21,6 +22,10 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     setLocation("/");
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   useEffect(() => {
@@ -81,8 +86,8 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-muted/30 text-foreground antialiased selection:bg-primary/10">
       
-      {/* 1. DASHBOARD HEADER */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border shadow-xs px-4 py-3.5">
+      {/* 1. DASHBOARD HEADER - HIDDEN DURING PRINT */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border shadow-xs px-4 py-3.5 no-print">
         <div className="container mx-auto max-w-md flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center shadow-xs">
@@ -90,28 +95,45 @@ export default function Dashboard() {
             </div>
             <h1 className="text-sm font-black tracking-tight text-primary uppercase">Portal</h1>
           </div>
-          <Button 
-            onClick={handleLogout} 
-            variant="ghost" 
-            size="sm" 
-            className="text-muted-foreground hover:text-destructive text-xs font-bold gap-1.5 px-2.5 rounded-xl h-8"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Log Out
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button 
+              onClick={handlePrint}
+              variant="outline"
+              size="sm"
+              className="text-primary border-primary/20 hover:bg-primary/5 text-xs font-bold gap-1.5 px-2.5 rounded-xl h-8"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              Print
+            </Button>
+            <Button 
+              onClick={handleLogout} 
+              variant="ghost" 
+              size="sm" 
+              className="text-muted-foreground hover:text-destructive text-xs font-bold gap-1.5 px-2.5 rounded-xl h-8"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Log Out
+            </Button>
+          </div>
         </div>
       </header>
 
+      {/* PRINT-ONLY SCHOOL HEADLINE STRIP */}
+      <div className="print-only-header hidden text-center space-y-1 mb-6 mt-2 border-b-2 border-primary pb-4">
+        <h1 className="text-xl font-black text-primary tracking-tight uppercase">MOSH DAY SCHOOL</h1>
+        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Official Academic Evaluation Terminal Report</p>
+      </div>
+
       {/* MAIN CONTAINER */}
-      <main className="container mx-auto px-4 py-6 max-w-md space-y-5">
+      <main className="container mx-auto px-4 py-6 max-w-md space-y-5 print-container">
         
         {/* 2. DYNAMIC STUDENT IDENTITY PROFILE CARD */}
-        <Card className="p-4 rounded-3xl border border-border bg-gradient-to-br from-primary to-primary/90 text-white shadow-md relative overflow-hidden">
-          <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-4 translate-y-4">
+        <Card className="p-4 rounded-3xl border border-border bg-gradient-to-br from-primary to-primary/90 text-white shadow-md relative overflow-hidden print-card">
+          <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-4 translate-y-4 no-print">
             <BookOpen className="w-40 h-40" />
           </div>
           <div className="flex items-center gap-4 relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 overflow-hidden shrink-0 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 overflow-hidden shrink-0 flex items-center justify-center print-avatar">
               {student?.student_image_url ? (
                 <img src={student.student_image_url} alt="Student avatar" className="w-full h-full object-cover" />
               ) : (
@@ -119,32 +141,32 @@ export default function Dashboard() {
               )}
             </div>
             <div className="space-y-0.5 flex-1">
-              <span className="text-[9px] uppercase tracking-widest text-white/70 font-bold bg-white/10 px-2 py-0.5 rounded-md">Verified Profile</span>
-              <h2 className="text-base font-black tracking-tight leading-snug mt-1">{student?.full_name}</h2>
-              <p className="text-[11px] text-white/80 font-medium">{student?.admission_no}</p>
+              <span className="text-[9px] uppercase tracking-widest text-white/70 font-bold bg-white/10 px-2 py-0.5 rounded-md no-print">Verified Profile</span>
+              <h2 className="text-base font-black tracking-tight leading-snug mt-1 print-text-dark">{student?.full_name}</h2>
+              <p className="text-[11px] text-white/80 font-medium print-text-muted">{student?.admission_no}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 mt-4 pt-3.5 border-t border-white/10 text-center relative z-10">
-            <div className="bg-white/5 rounded-xl py-1.5 px-2 border border-white/5">
-              <p className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Class</p>
-              <p className="text-xs font-extrabold mt-0.5">{student?.class}</p>
+            <div className="bg-white/5 rounded-xl py-1.5 px-2 border border-white/5 print-box">
+              <p className="text-[9px] text-white/60 font-bold uppercase tracking-wider print-text-muted">Class</p>
+              <p className="text-xs font-extrabold mt-0.5 print-text-dark">{student?.class}</p>
             </div>
-            <div className="bg-white/5 rounded-xl py-1.5 px-2 border border-white/5">
-              <p className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Active Term</p>
-              <p className="text-xs font-extrabold mt-0.5">{student?.term}</p>
+            <div className="bg-white/5 rounded-xl py-1.5 px-2 border border-white/5 print-box">
+              <p className="text-[9px] text-white/60 font-bold uppercase tracking-wider print-text-muted">Active Term</p>
+              <p className="text-xs font-extrabold mt-0.5 print-text-dark">{student?.term}</p>
             </div>
           </div>
         </Card>
 
         {/* 3. LIVE PERFORMANCE CARD / REPORT CARD MATRICES */}
-        <Card className="rounded-3xl border border-border shadow-xs bg-white overflow-hidden">
+        <Card className="rounded-3xl border border-border shadow-xs bg-white overflow-hidden print-flat">
           <div className="px-4 pt-4 pb-2 border-b border-border/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4 text-primary" />
               <h3 className="text-xs font-black uppercase text-primary tracking-wide">Academic Results</h3>
             </div>
-            <span className="text-[10px] bg-emerald-50 text-emerald-600 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-100">Released</span>
+            <span className="text-[10px] bg-emerald-50 text-emerald-600 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-100 no-print">Released</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -167,12 +189,12 @@ export default function Dashboard() {
                         <td className="py-3 px-4 font-bold text-foreground max-w-[140px] truncate">{row.subject}</td>
                         <td className="py-3 px-2 text-center text-muted-foreground font-semibold">{row.ca}</td>
                         <td className="py-3 px-2 text-center text-muted-foreground font-semibold">{row.exam}</td>
-                        <td className="py-3 px-2 text-center text-primary font-bold">{totalScore}</td>
+                        <td className="py-3 px-2 text-center text-primary font-bold print-text-dark">{totalScore}</td>
                         <td className="py-3 px-4 text-right">
                           <span className={`inline-block text-[10px] font-black w-6 h-6 leading-6 text-center rounded-lg ${
                             row.grade?.startsWith('A') 
-                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                              : 'bg-amber-50 text-amber-600 border border-amber-100'
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 print-green' 
+                              : 'bg-amber-50 text-amber-600 border border-amber-100 print-amber'
                           }`}>
                             {row.grade || 'N/A'}
                           </span>
@@ -193,13 +215,13 @@ export default function Dashboard() {
         </Card>
 
         {/* 4. PERFORMANCE SUMMARY AND SIGN-OFF REMARKS */}
-        <Card className="p-4 rounded-3xl border border-border shadow-xs bg-white space-y-3">
+        <Card className="p-4 rounded-3xl border border-border shadow-xs bg-white space-y-3 print-flat">
           <div className="flex items-center gap-2 border-b border-border/50 pb-2">
             <MessageSquare className="w-4 h-4 text-primary" />
             <h3 className="text-xs font-black uppercase text-primary tracking-wide">Teacher's Remark</h3>
           </div>
           
-          <div className="p-3 bg-muted/40 rounded-2xl border border-border/60">
+          <div className="p-3 bg-muted/40 rounded-2xl border border-border/60 print-flat-box">
             <p className="text-xs text-foreground/80 leading-relaxed font-medium">
               {reportCard.length > 0 
                 ? `"${reportCard[0]?.remark || 'Keep up the brilliant momentum!'}"` 
@@ -210,7 +232,7 @@ export default function Dashboard() {
                 <span className="font-bold block text-foreground">Mrs. F. Adegoke</span>
                 <span className="text-muted-foreground font-semibold">Class Teacher Assessment</span>
               </div>
-              <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+              <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 print-green-icon" />
             </div>
           </div>
         </Card>
@@ -221,6 +243,73 @@ export default function Dashboard() {
       <footer className="py-6 text-center text-[10px] text-muted-foreground font-medium">
         <p>Mosh Day School Portal Ecosystem &bull; &copy; 2026</p>
       </footer>
+
+      {/* 5. CASCADING GLOBAL INJECTED PRINT ARCHITECTURAL RULES */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          body {
+            background: white !important;
+            color: black !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-only-header {
+            display: block !important;
+          }
+          .print-container {
+            max-w-full !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .print-card {
+            background: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+            border-radius: 12px !important;
+          }
+          .print-text-dark {
+            color: #000000 !important;
+          }
+          .print-text-muted {
+            color: #64748b !important;
+          }
+          .print-box {
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #000000 !important;
+          }
+          .print-flat {
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+            border-radius: 12px !important;
+          }
+          .print-flat-box {
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+          }
+          .print-green {
+            background: #f0fdf4 !important;
+            color: #16a34a !important;
+            border: 1px solid #bbf7d0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .print-amber {
+            background: #fffbeb !important;
+            color: #d97706 !important;
+            border: 1px solid #fde68a !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          footer {
+            margin-top: 40px !important;
+            border-t: 1px solid #e2e8f0 !important;
+          }
+        }
+      `}} />
 
     </div>
   );
