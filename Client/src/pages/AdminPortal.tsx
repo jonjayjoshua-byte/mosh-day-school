@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
-import { Plus, Award, Loader2, RefreshCw, Lock, Trash2, KeyRound, Save } from "lucide-react";
+import { Award, RefreshCw, Lock, Trash2, KeyRound, Save } from "lucide-react";
 
 export default function AdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -61,26 +61,16 @@ export default function AdminPortal() {
     else { alert("Invalid Passkey!"); setAdminPassword(""); }
   };
 
-  const handleCreateStudent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const { error } = await supabase.from("students").insert([{ 
-        full_name: fullName.trim(), admission_no: admissionNo.trim(), class: className.trim(), 
-        term, parent_phone: parentPhone.trim(), portal_password: studentPassword.trim(), student_password: studentPassword.trim() 
-      }]);
-      if (error) throw error;
-      alert("Student Registered!");
-      setFullName(""); setAdmissionNo(""); setClassName(""); setParentPhone(""); setStudentPassword("");
-      fetchStudents();
-    } catch (err: any) { alert(err.message); }
-  };
-
   const handlePublishAll = async () => {
     if (!selectedAdmNo || !teacherName) return alert("Select student and enter teacher name!");
     const payload = gradeRows.filter(r => r.subject !== "").map(r => ({
-      admission_no: selectedAdmNo, subject: r.subject, ca: parseInt(r.ca) || 0,
-      exam: parseInt(r.exam) || 0, grade: r.grade.toUpperCase(),
-      remark: r.remark || "Good", teacher_name: teacherName
+      admission_no: selectedAdmNo, 
+      subject: r.subject, 
+      ca: parseInt(r.ca) || 0,
+      exam: parseInt(r.exam) || 0, 
+      grade: r.grade.toUpperCase(),
+      remark: r.remark || "Good", 
+      teacher_name: teacherName
     }));
     const { error } = await supabase.from("grades").insert(payload);
     if (error) alert(error.message);
@@ -130,13 +120,17 @@ export default function AdminPortal() {
             {students.map(s => <option key={s.admission_no} value={s.admission_no}>{s.full_name}</option>)}
           </select>
           <Input placeholder="Teacher Name" value={teacherName} onChange={e => setTeacherName(e.target.value)} />
-          <div className="space-y-2">
+          
+          <div className="space-y-4">
             {gradeRows.map((row, i) => (
-              <div key={i} className="grid grid-cols-5 gap-2">
-                <Input placeholder="Subj" value={row.subject} onChange={e => updateRow(i, "subject", e.target.value)} className="col-span-2 text-[10px]" />
-                <Input placeholder="CA" value={row.ca} onChange={e => updateRow(i, "ca", e.target.value)} className="text-[10px]" />
-                <Input placeholder="Ex" value={row.exam} onChange={e => updateRow(i, "exam", e.target.value)} className="text-[10px]" />
-                <Input placeholder="Gr" value={row.grade} onChange={e => updateRow(i, "grade", e.target.value)} className="text-[10px]" />
+              <div key={i} className="space-y-2 p-2 border rounded-xl bg-muted/10">
+                <div className="grid grid-cols-5 gap-2">
+                  <Input placeholder="Subj" value={row.subject} onChange={e => updateRow(i, "subject", e.target.value)} className="col-span-2 text-[10px]" />
+                  <Input placeholder="CA" value={row.ca} onChange={e => updateRow(i, "ca", e.target.value)} className="text-[10px]" />
+                  <Input placeholder="Ex" value={row.exam} onChange={e => updateRow(i, "exam", e.target.value)} className="text-[10px]" />
+                  <Input placeholder="Gr" value={row.grade} onChange={e => updateRow(i, "grade", e.target.value)} className="text-[10px]" />
+                </div>
+                <Input placeholder="Teacher's Remark" value={row.remark} onChange={e => updateRow(i, "remark", e.target.value)} className="text-[10px]" />
               </div>
             ))}
             <Button onClick={addRow} variant="outline" size="sm" className="w-full text-xs">+ Add Row</Button>
