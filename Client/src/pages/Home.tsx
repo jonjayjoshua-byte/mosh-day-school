@@ -84,28 +84,27 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       
-      {/* 1. HERO SECTION */}
-      <header className="bg-gradient-to-r divider bg-blue-900 text-white py-20 px-6 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-        <div className="max-w-4xl mx-auto relative z-10">
-          <div className="inline-flex p-3 bg-white/10 rounded-full mb-4 backdrop-blur-sm animate-pulse">
-            <span className="text-3xl">📚</span>
+      {/* 1. PROFESSIONAL NAVIGATION HEADER */}
+      <header className="bg-white border-b border-slate-100 py-4 px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-900 text-white p-2.5 rounded-xl flex items-center justify-center shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
           </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-4">
-            MOSH DAY SCHOOL
-          </h1>
-          <p className="text-xl md:text-2xl font-light text-blue-200 max-w-2xl mx-auto mb-8">
-            "Best Grooming" — Nurturing future leaders through academic excellence, moral integrity, and modern innovation.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <a href="#portal" className="bg-amber-500 hover:bg-amber-600 text-blue-950 font-bold px-8 py-3 rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5">
-              Access Student Portal
-            </a>
-            <a href="https://wa.me/your-number" target="_blank" rel="noreferrer" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all">
-              💬 Chat on WhatsApp
-            </a>
+          <div>
+            <h1 className="text-xl font-black text-blue-950 tracking-tight leading-none mb-0.5">
+              MOSH DAY SCHOOL
+            </h1>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Best Grooming
+            </p>
           </div>
         </div>
+        
+        <a href="https://wa.me/your-number" target="_blank" rel="noreferrer" className="bg-blue-950 hover:bg-blue-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+          Chat on WhatsApp
+        </a>
       </header>
 
       {/* 2. LIVE INTERACTIVE PORTAL SECTION */}
