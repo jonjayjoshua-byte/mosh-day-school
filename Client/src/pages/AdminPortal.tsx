@@ -124,12 +124,12 @@ export default function AdminPortal() {
         
       if (error) throw error;
       alert(`All previous grades wiped successfully for ${admNo}!`);
+      window.location.reload();
     } catch (err: any) {
       alert(err.message);
     }
   };
 
-  // --- FIXED BY TARGETING THE ACTUAL ADMISSION_NO VALUE INSTEAD OF NONEXISTENT ID ---
   const handlePromoteOrChange = async (admNo: string, currentClass: string, currentTerm: string) => {
     const newClass = prompt("Enter new Class (Leave blank to keep current):", currentClass);
     const newTerm = prompt("Enter new Term (Leave blank to keep current):", currentTerm);
@@ -143,7 +143,6 @@ export default function AdminPortal() {
 
       if (Object.keys(updates).length === 0) return;
 
-      // Safely trim and reference the valid column name
       const targetAdmissionNo = admNo.trim();
 
       const { error } = await supabase
@@ -154,7 +153,9 @@ export default function AdminPortal() {
       if (error) throw error;
       
       alert("Student profile metadata records synchronized!");
-      await fetchStudents();
+      
+      // Forces browser shell to explicitly drop aggressive storage caching
+      window.location.reload();
       
     } catch (err: any) {
       alert(err.message);
