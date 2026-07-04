@@ -24,7 +24,7 @@ export default function AdminPortal() {
   const [examScore, setExamScore] = useState("");
   const [grade, setGrade] = useState("");
   const [teacherRemark, setTeacherRemark] = useState("");
-  const [teacherName, setTeacherName] = useState(""); // Added teacher name state
+  const [teacherName, setTeacherName] = useState("");
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -98,7 +98,7 @@ export default function AdminPortal() {
           exam: parseInt(examScore),
           grade: grade.toUpperCase(),
           remark: teacherRemark,
-          teacher_name: teacherName // Saves custom teacher name
+          teacher_name: teacherName
         }
       ]);
       if (error) throw error;
@@ -114,7 +114,6 @@ export default function AdminPortal() {
     }
   };
 
-  // --- NEW: FUNCTION TO CLEAR ALL SCORES FOR A STUDENT ---
   const handleClearScores = async (admNo: string) => {
     if (!confirm(`Are you sure you want to completely wipe out all grades for student ${admNo}? This cannot be undone.`)) return;
     
@@ -131,8 +130,8 @@ export default function AdminPortal() {
     }
   };
 
-  // --- NEW: FUNCTION TO UPDATE CLASS OR TERM ---
-  const handlePromoteOrChange = async (id: string, currentClass: string, currentTerm: string) => {
+  // --- CHANGED HERE: Uses admissionNo instead of id to update the record ---
+  const handlePromoteOrChange = async (admNo: string, currentClass: string, currentTerm: string) => {
     const newClass = prompt("Enter new Class (Leave blank to keep current):", currentClass);
     const newTerm = prompt("Enter new Term (Leave blank to keep current):", currentTerm);
     
@@ -146,7 +145,7 @@ export default function AdminPortal() {
       const { error } = await supabase
         .from("students")
         .update(updates)
-        .eq("id", id);
+        .ilike("admission_no", admNo); // Targets the custom string key column
 
       if (error) throw error;
       alert("Student profile metadata records synchronized!");
@@ -236,8 +235,9 @@ export default function AdminPortal() {
                 className="w-full rounded-xl border border-input bg-background px-3 h-10 text-xs font-medium"
               >
                 <option value="">-- Select Target Student --</option>
-                {students.map(s => (
-                  <option key={s.id} value={s.admission_no}>{s.full_name}</option>
+                {students.map((s, index) => (
+                  // Using admission_no joined with index as an alternative unique key for the dropdown loop element
+                  <option key={`${s.admission_no}-${index}`} value={s.admission_no}>{s.full_name}</option>
                 ))}
               </select>
               <Input placeholder="Subject Name" value={subject} onChange={e => setSubject(e.target.value)} className="rounded-xl text-xs h-10" />
@@ -257,22 +257,23 @@ export default function AdminPortal() {
           </Card>
         </div>
 
-        {/* SYSTEM DIRECTORY WITH ACTION BUTTONS */}
+        {/* SYSTEM DIRECTORY */}
         <Card className="p-5 rounded-3xl border bg-white shadow-xs">
           <h2 className="text-xs font-black uppercase text-primary tracking-wide mb-3">Live System Directory</h2>
           {loading ? (
             <div className="flex justify-center p-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
           ) : (
             <div className="divide-y text-xs font-medium max-h-60 overflow-y-auto">
-              {students.map(s => (
-                <div key={s.id} className="py-3 flex justify-between items-center gap-2">
+              {students.map((s, index) => (
+                <div key={`${s.admission_no}-${index}`} className="py-3 flex justify-between items-center gap-2">
                   <div>
                     <p className="font-bold text-foreground">{s.full_name}</p>
                     <p className="text-[10px] text-muted-foreground">{s.admission_no} &bull; <span className="text-primary font-bold">{s.class} ({s.term})</span></p>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Button 
-                      onClick={() => handlePromoteOrChange(s.id, s.class, s.term)}
+                      // CHANGED HERE: Pass admission_no instead of id
+                      onClick={() => handlePromoteOrChange(s.admission_no, s.class, s.term)}
                       variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50"
                     >
                       Edit Class/Term
