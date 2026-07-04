@@ -182,6 +182,27 @@ export default function Dashboard() {
               <span className="text-[10px] bg-emerald-50 text-emerald-600 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-100">Released</span>
             </div>
 
+            {/* VISUAL PROGRESS BARS */}
+            <div className="p-4 space-y-3 border-b border-border/50 bg-muted/20 no-print">
+              {reportCard.map((row, idx) => {
+                const totalScore = (row.ca || 0) + (row.exam || 0);
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold uppercase text-foreground/70">
+                      <span>{row.subject}</span>
+                      <span>{totalScore}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary transition-all duration-1000" 
+                        style={{ width: `${totalScore}%` }} 
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left print:text-[11px]">
                 <thead>
@@ -219,7 +240,6 @@ export default function Dashboard() {
             </div>
           </Card>
         ) : (
-          /* DEFAULT STATE IF NO GRADES HAVE BEEN UPLOADED YET */
           <Card className="p-8 text-center rounded-3xl border border-dashed border-border bg-white flex flex-col items-center justify-center space-y-3 shadow-xs">
             <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 border border-amber-100">
               <AlertCircle className="w-5 h-5" />
@@ -233,7 +253,7 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* TEACHER REMARK SECTION (ONLY SHOWS IF GRADES EXIST) */}
+        {/* TEACHER REMARK SECTION */}
         {hasGrades && (
           <Card className="p-3 rounded-3xl border border-border shadow-xs bg-white space-y-2 print:border-slate-200 print:p-2.5 print:shadow-none print:bg-white">
             <div className="flex items-center gap-2 border-b border-border/50 pb-1 no-print">
@@ -247,7 +267,6 @@ export default function Dashboard() {
               </p>
               <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-1.5 text-[10px] no-print">
                 <div>
-                  {/* DYNAMIC TEACHER NAME: Falls back to 'Class Teacher' if column missing */}
                   <span className="font-bold block text-foreground">{reportCard[0]?.teacher_name || "Mrs. F. Adegoke"}</span>
                   <span className="text-muted-foreground font-semibold">Class Teacher Assessment</span>
                 </div>
@@ -257,7 +276,7 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* COMPACT OFFICIAL SIGNATURE SIGNOFF STRIP (ONLY SHOWS IF GRADES EXIST) */}
+        {/* OFFICIAL SIGNATURES */}
         {hasGrades && (
           <div className="print-signoff hidden pt-4 grid grid-cols-2 gap-8 text-center text-[10px] font-bold text-slate-900">
             <div className="space-y-4">
@@ -273,7 +292,6 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-
       </main>
 
       {/* DASHBOARD FOOTER */}
@@ -281,76 +299,18 @@ export default function Dashboard() {
         <p>Mosh Day School Portal Ecosystem &bull; &copy; 2026 All Rights Reserved.</p>
       </footer>
 
-      {/* ENHANCED CSS PRINT SINGLE PAGE INJECTION ENGINE */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
-          @page {
-            size: letter portrait;
-            margin: 0.2in 0.3in 0.2in 0.3in;
-          }
-          html, body {
-            background: #f1f5f9 !important;
-            background-color: #f1f5f9 !important;
-            color: #0f172a !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            height: 100%;
-            overflow: hidden;
-          }
-          .print-bg-fix {
-            background: #f1f5f9 !important;
-            background-color: #f1f5f9 !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-only-header {
-            display: block !important;
-          }
-          .print-signoff {
-            display: grid !important;
-          }
-          .print-container {
-            max-w-full !important;
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 auto !important;
-          }
-          .print-flat-profile {
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-            color: #0f172a !important;
-            border: 1px solid #cbd5e1 !important;
-            box-shadow: none !important;
-            border-radius: 12px !important;
-            padding: 0.65rem !important;
-          }
-          .print-avatar {
-            border: 1px solid #e2e8f0 !important;
-            background: #f8fafc !important;
-          }
-          .print-box {
-            background: #f8fafc !important;
-            background-color: #f8fafc !important;
-            border: 1px solid #cbd5e1 !important;
-          }
-          .print-table-card {
-            border: 1px solid #cbd5e1 !important;
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-            box-shadow: none !important;
-            border-radius: 12px !important;
-          }
-          th {
-            padding: 0.35rem 0.5rem !important;
-          }
-          td {
-            padding: 0.35rem 0.5rem !important;
-            border-bottom: 1px solid #e2e8f0 !important;
-          }
+          @page { size: letter portrait; margin: 0.2in 0.3in 0.2in 0.3in; }
+          html, body { background: #f1f5f9 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .no-print { display: none !important; }
+          .print-only-header { display: block !important; }
+          .print-signoff { display: grid !important; }
+          .print-container { max-width: 100% !important; width: 100% !important; padding: 0 !important; }
+          .print-flat-profile { background: #ffffff !important; border: 1px solid #cbd5e1 !important; box-shadow: none !important; }
+          .print-table-card { border: 1px solid #cbd5e1 !important; background: #ffffff !important; box-shadow: none !important; }
         }
       `}} />
-
     </div>
   );
 }
