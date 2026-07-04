@@ -10,109 +10,31 @@ import {
   Gamepad2,
   Dumbbell,
   Sparkles,
-  ChevronRight,
-  MessageCircle,
-  Upload,
   Loader2,
+  Lock,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter"; // 1. Added wouter hook for navigation
-import { supabase, loginStudent } from "@/lib/supabase";
+import { useState } from "react";
+import { useLocation } from "wouter"; 
+import { loginStudent } from "@/lib/supabase";
 
 export default function Home() {
-  const [location, setLocation] = useLocation(); // 2. Initialized location traffic switcher
-  const [scrollY, setScrollY] = useState(0);
-  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [, setLocation] = useLocation(); 
   const [loading, setLoading] = useState(false);
 
-  // Form Fields State
-  const [studentName, setStudentName] = useState("");
-  const [studentClass, setStudentClass] = useState("");
+  // Student Form Login State
   const [admissionNo, setAdmissionNo] = useState("");
   const [portalPassword, setPortalPassword] = useState("");
-  const [term, setTerm] = useState("Third Term");
-  const [parentPhone, setParentPhone] = useState("");
-  const [studentImageUrl, setStudentImageUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch("https://tmpfiles.org/api/v1/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.status === "success") {
-        const directUrl = data.data.url.replace("tmpfiles.org/", "tmpfiles.org/dl/");
-        setStudentImageUrl(directUrl); 
-        alert("Image uploaded to cloud successfully! 🚀");
-      } else {
-        alert("Upload failed. Try a smaller file size.");
-      }
-    } catch (error) {
-      console.error("Upload error details:", error);
-      alert("Network error occurred during upload.");
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handlePortalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    if (isLoginMode) {
-      const result = await loginStudent(admissionNo, portalPassword);
-      if (result.success) {
-        // 3. Replaced alert box with professional route jump!
-        setLocation(`/dashboard?admissionNo=${encodeURIComponent(admissionNo)}`);
-      } else {
-        alert(result.error);
-      }
+    const result = await loginStudent(admissionNo.trim(), portalPassword);
+    if (result.success) {
+      // Replaced alert box with professional route jump!
+      setLocation(`/dashboard?admissionNo=${encodeURIComponent(admissionNo.trim())}`);
     } else {
-      try {
-        const { error } = await supabase
-          .from("students")
-          .insert([
-            {
-              admission_no: admissionNo,
-              full_name: studentName,
-              class: studentClass,
-              term: term,
-              parent_phone: parentPhone,
-              portal_password: portalPassword,
-              student_image_url: studentImageUrl
-            },
-          ]);
-
-        if (error) throw error;
-
-        alert(`Successfully registered profile for ${studentName}! 🚀`);
-        setStudentName("");
-        setStudentClass("");
-        setAdmissionNo("");
-        setPortalPassword("");
-        setParentPhone("");
-        setStudentImageUrl("");
-        setIsLoginMode(true);
-      } catch (err: any) {
-        alert(err.message || "Failed to save profile record to database.");
-      }
+      alert(result.error);
     }
     setLoading(false);
   };
@@ -207,40 +129,13 @@ export default function Home() {
         <section id="portal-section" className="bg-white rounded-3xl shadow-xl border border-border overflow-hidden">
           <div className="p-6">
             <h3 className="text-base font-black text-primary text-center mb-0.5">
-              {isLoginMode ? "Student Portal Login" : "Pupil Profile Registration"}
+              Student Portal Login
             </h3>
             <p className="text-muted-foreground text-xs text-center mb-5 font-medium">
-              {isLoginMode ? "Enter details to access performance results." : "Setup backend database profiles seamlessly."}
+              Enter details to access performance results.
             </p>
             
             <form onSubmit={handlePortalSubmit} className="space-y-4">
-              {!isLoginMode && (
-                <>
-                  <div>
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Pupil Full Name</label>
-                    <Input value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="e.g. Chidi Adebayo" className="rounded-xl border-border text-xs py-2.5" required />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Class Assignment</label>
-                      <Input value={studentClass} onChange={(e) => setStudentClass(e.target.value)} placeholder="Primary 3" className="rounded-xl border-border text-xs py-2.5" required />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Active Term</label>
-                      <select value={term} onChange={(e) => setTerm(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-border text-xs bg-white text-foreground font-medium focus:outline-none">
-                        <option>First Term</option>
-                        <option>Second Term</option>
-                        <option>Third Term</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Parent Phone Number</label>
-                    <Input value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} placeholder="e.g. 0802222..." className="rounded-xl border-border text-xs py-2.5" required />
-                  </div>
-                </>
-              )}
-
               <div>
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Admission Number</label>
                 <Input value={admissionNo} onChange={(e) => setAdmissionNo(e.target.value)} placeholder="e.g. MDS/2026/045" className="rounded-xl border-border text-xs py-2.5" required />
@@ -251,33 +146,15 @@ export default function Home() {
                 <Input type="password" value={portalPassword} onChange={(e) => setPortalPassword(e.target.value)} placeholder="••••••••" className="rounded-xl border-border text-xs py-2.5" required />
               </div>
 
-              {!isLoginMode && (
-                <div className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center bg-muted/20 relative transition-all">
-                  {uploading ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                  ) : studentImageUrl ? (
-                    <p className="text-xs text-emerald-600 font-bold bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-                      Image Linked Successfully ✅
-                    </p>
-                  ) : (
-                    <div className="text-center cursor-pointer py-1">
-                      <Upload className="w-5 h-5 mx-auto text-muted-foreground mb-1" />
-                      <p className="text-xs text-primary font-bold">Add Student Image</p>
-                      <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                    </div>
-                  )}
-                </div>
-              )}
-
               <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-xs py-4 shadow-sm flex justify-center items-center">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isLoginMode ? "Login to Portal" : "Save Record"}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Login to Portal"}
               </Button>
             </form>
 
-            <div className="mt-4 text-center">
-              <button onClick={() => setIsLoginMode(!isLoginMode)} className="text-xs font-bold text-primary hover:underline transition">
-                {isLoginMode ? "Switch to Admin: Register Pupil" : "Return to Student Portal Login"}
-              </button>
+            <div className="mt-5 pt-4 border-t border-dashed border-border text-center">
+              <a href="/admin" className="inline-flex items-center gap-1 text-[10px] font-black tracking-wider uppercase text-muted-foreground hover:text-primary transition">
+                <Lock className="w-3 h-3" /> Authorized Staff Administration Gate &rarr;
+              </a>
             </div>
           </div>
         </section>
