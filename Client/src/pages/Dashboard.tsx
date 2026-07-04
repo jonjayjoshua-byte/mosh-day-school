@@ -16,17 +16,16 @@ import { supabase } from "@/lib/supabase";
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [student, setStudent] = useState<any>(null);
+  const [reportCard, setReportCard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Added missing const declaration to prevent compilation crash
   const handleLogout = () => {
     setLocation("/");
   };
 
   useEffect(() => {
-    const fetchStudentData = async () => {
+    const fetchDashboardData = async () => {
       try {
-        // Grab the admission number safely out of the URL parameters
         const params = new URLSearchParams(window.location.search);
         const admissionNo = params.get("admissionNo");
 
@@ -35,15 +34,26 @@ export default function Dashboard() {
           return;
         }
 
-        // Fetch the profile row matching this exact admission number
-        const { data, error } = await supabase
+        // 1. Fetch Profile Data
+        const { data: studentData, error: studentError } = await supabase
           .from("students")
           .select("*")
           .eq("admission_no", admissionNo)
           .single();
 
-        if (error) throw error;
-        setStudent(data);
+        if (studentError) throw studentError;
+        setStudent(studentData);
+
+        // 2. Fetch Live Relational Grades Data
+        const { data: gradesData, error: gradesError } = await supabase
+          .from("grades")
+          .select("*")
+          .eq("admission_no", admissionNo)
+          .order("subject", { ascending: true });
+
+        if (gradesError) throw gradesError;
+        setReportCard(gradesData || []);
+
       } catch (err) {
         console.error("Error loading dashboard data:", err);
         alert("Session expired or profile record not found.");
@@ -53,7 +63,7 @@ export default function Dashboard() {
       }
     };
 
-    fetchStudentData();
+    fetchDashboardData();
   }, [setLocation]);
 
   if (loading) {
@@ -64,15 +74,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  // Fallback structural mock data for academic table until your grades table is built
-  const reportCard = [
-    { subject: "Mathematics", ca: 34, exam: 52, total: 86, grade: "A", remark: "Excellent" },
-    { subject: "English Language", ca: 28, exam: 48, total: 76, grade: "B", remark: "Very Good" },
-    { subject: "Basic Science", ca: 31, exam: 55, total: 86, grade: "A", remark: "Excellent" },
-    { subject: "ICT Fundamentals", ca: 38, exam: 58, total: 96, grade: "A+", remark: "Outstanding" },
-    { subject: "Chess Strategy", ca: 35, exam: 50, total: 85, grade: "A", remark: "Excellent" },
-  ];
 
   return (
     <div className="min-h-screen bg-muted/30 text-foreground antialiased selection:bg-primary/10">
@@ -133,7 +134,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* 3. PERFORMANCE CARD / REPORT CARD MATRICES */}
+        {/* 3. LIVE PERFORMANCE CARD / REPORT CARD MATRICES */}
         <Card className="rounded-3xl border border-border shadow-xs bg-white overflow-hidden">
           <div className="px-4 pt-4 pb-2 border-b border-border/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -155,23 +156,34 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40 text-xs font-medium">
-                {reportCard.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-muted/10 transition-colors">
-                    <td className="py-3 px-4 font-bold text-foreground max-w-[140px] truncate">{row.subject}</td>
-                    <td className="py-3 px-2 text-center text-muted-foreground font-semibold">{row.ca}</td>
-                    <td className="py-3 px-2 text-center text-muted-foreground font-semibold">{row.exam}</td>
-                    <td className="py-3 px-2 text-center text-primary font-bold">{row.total}</td>
-                    <td className="py-3 px-4 text-right">
-                      <span className={`inline-block text-[10px] font-black w-6 h-6 leading-6 text-center rounded-lg ${
-                        row.grade.startsWith('A') 
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                          : 'bg-amber-50 text-amber-600 border border-amber-100'
-                      }`}>
-                        {row.grade}
-                      </span>
+                {reportCard.length > 0 ? (
+                  reportCard.map((row, idx) => {
+                    const totalScore = (row.ca || 0) + (row.exam || 0);
+                    return (
+                      <tr key={idx} className="hover:bg-muted/10 transition-colors">
+                        <td className="py-3 px-4 font-bold text-foreground max-w-[140px] truncate">{row.subject}</td>
+                        <td className="py-3 px-2 text-center text-muted-foreground font-semibold">{row.ca}</td>
+                        <td className="py-3 px-2 text-center text-muted-foreground font-semibold">{row.exam}</td>
+                        <td className="py-3 px-2 text-center text-primary font-bold">{totalScore}</td>
+                        <td className="py-3 px-4 text-right">
+                          <span className={`inline-block text-[10px] font-black w-6 h-6 leading-6 text-center rounded-lg ${
+                            row.grade?.startsWith('A') 
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                              : 'bg-amber-50 text-amber-600 border border-amber-100'
+                          }`}>
+                            {row.grade || 'N/A'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-xs text-muted-foreground font-bold tracking-wide uppercase">
+                      No subject results uploaded yet.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -186,7 +198,9 @@ export default function Dashboard() {
           
           <div className="p-3 bg-muted/40 rounded-2xl border border-border/60">
             <p className="text-xs text-foreground/80 leading-relaxed font-medium">
-              "{student?.full_name || 'The student'} displays an exceptional capability in conceptualizing technical information and strategic thinking puzzles. Computational speed during practical lab projects remains outstanding. Keep up the brilliant momentum!"
+              {reportCard.length > 0 
+                ? `"${reportCard[0]?.remark || 'Keep up the brilliant momentum!'}"` 
+                : '"Profile registered. Performance assessment matrix pending academic department configuration cycle."'}
             </p>
             <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2 text-[10px]">
               <div>
