@@ -1,284 +1,347 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  BookOpen,
-  Trophy,
-  Users,
-  Zap,
-  Shield,
-  Gamepad2,
-  Dumbbell,
-  Sparkles,
-  ChevronRight,
-  MessageCircle,
-  Upload,
-  Loader2,
-} from "lucide-react";
-import { useState, useEffect } from "react";
-// Import our Supabase client and connection helpers
-import { supabase, loginStudent } from "@/lib/supabase";
+import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 export default function Home() {
-  const [scrollY, setScrollY] = useState(0);
-  
-  // Toggle between Student Login mode and Admin Registration mode
-  const [isLoginMode, setIsLoginMode] = useState(true);
+  // Portal & Admin Form States
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [admissionNo, setAdmissionNo] = useState('');
+  const [portalPassword, setPortalPassword] = useState('');
+  const [studentName, setStudentName] = useState('');
+  const [studentClass, setStudentClass] = useState('Primary 1');
+  const [term, setTerm] = useState('First Term');
+  const [parentPhone, setParentPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Form Fields State
-  const [studentName, setStudentName] = useState("");
-  const [studentClass, setStudentClass] = useState("");
-  const [admissionNo, setAdmissionNo] = useState("");
-  const [portalPassword, setPortalPassword] = useState("");
-  const [term, setTerm] = useState("Third Term");
-  const [parentPhone, setParentPhone] = useState("");
-  const [studentImageUrl, setStudentImageUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Image Upload Logic to Public Cloud
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
+  // Handle Login
+  const handlePortalLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!admissionNo || !portalPassword) {
+      alert('Please fill in all fields');
+      return;
+    }
+    setLoading(true);
     try {
-      const response = await fetch("https://tmpfiles.org/api/v1/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('admission_no', admissionNo.trim())
+        .eq('portal_password', portalPassword.trim())
+        .single();
 
-      const data = await response.json();
-
-      if (response.ok && data.status === "success") {
-        const directUrl = data.data.url.replace("tmpfiles.org/", "tmpfiles.org/dl/");
-        setStudentImageUrl(directUrl); 
-        alert("Image uploaded to cloud successfully! 🚀");
+      if (error || !data) {
+        alert('Invalid Admission Number or Password');
       } else {
-        alert("Upload failed. Try a smaller file size.");
+        alert(`Welcome back, ${data.full_name}! 🎉\nClass: ${data.class}\nTerm: ${data.term || 'N/A'}`);
+        // Dashboard redirection logic will hook in here next!
       }
-    } catch (error) {
-      console.error("Upload error details:", error);
-      alert("Network error occurred during upload.");
+    } catch (err) {
+      alert('An unexpected error occurred.');
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   };
 
-  // Handle Form Actions (Login vs Registration)
+  // Handle Registration
   const handlePortalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    if (isLoginMode) {
-      // --- LOGIN LOGIC ---
-      const result = await loginStudent(admissionNo, portalPassword);
-      if (result.success) {
-        alert(`Welcome back, ${result.student.full_name}! 🎉\nClass: ${result.student.class}\nTerm: ${result.student.term}`);
-        console.log("Logged in student profile:", result.student);
-      } else {
-        alert(result.error);
-      }
-    } else {
-      // --- REGISTRATION LOGIC (Inserts straight to Supabase) ---
-      try {
-        const { data, error } = await supabase
-          .from("students")
-          .insert([
-            {
-              admission_no: admissionNo,
-              full_name: studentName,
-              class: studentClass,
-              term: term,
-              parent_phone: parentPhone,
-              portal_password: portalPassword,
-            },
-          ])
-          .select();
-
-        if (error) throw error;
-
-        alert(`Successfully registered profile for ${studentName}! 🚀`);
-        
-        // Reset fields
-        setStudentName("");
-        setStudentClass("");
-        setAdmissionNo("");
-        setPortalPassword("");
-        setParentPhone("");
-        setStudentImageUrl("");
-        setIsLoginMode(true); // Flip back to login mode
-      } catch (err: any) {
-        console.error("Supabase Save Error:", err);
-        alert(err.message || "Failed to save profile record to database.");
-      }
+    if (!studentName || !admissionNo || !portalPassword || !parentPhone) {
+      alert('Please fill in all registration fields');
+      return;
     }
-    setLoading(false);
-  };
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('students')
+        .insert([
+          {
+            admission_no: admissionNo.trim(),
+            full_name: studentName.trim(),
+            class: studentClass,
+            term: term,
+            parent_phone: parentPhone.trim(),
+            portal_password: portalPassword.trim()
+          }
+        ]);
 
-  const handleWhatsApp = () => {
-    window.open("https://wa.me/2348022228201", "_blank");
-  };
-
-  const handleApply = () => {
-    const section = document.getElementById("portal-section");
-    section?.scrollIntoView({ behavior: "smooth" });
+      if (error) {
+        alert(error.message);
+      } else {
+        alert(`Successfully registered profile for ${studentName}! 🚀`);
+        // Reset fields
+        setStudentName('');
+        setAdmissionNo('');
+        setPortalPassword('');
+        setParentPhone('');
+        setIsAdmin(false);
+      }
+    } catch (err) {
+      alert('An unexpected error occurred during saving.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border shadow-sm" role="navigation" aria-label="Main navigation">
-        <div className="container flex items-center justify-between py-4">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-white" />
-            </div>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+      
+      {/* 1. HERO SECTION */}
+      <header className="bg-gradient-to-r divider bg-blue-900 text-white py-20 px-6 text-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="inline-flex p-3 bg-white/10 rounded-full mb-4 backdrop-blur-sm animate-pulse">
+            <span className="text-3xl">📚</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-4">
+            MOSH DAY SCHOOL
+          </h1>
+          <p className="text-xl md:text-2xl font-light text-blue-200 max-w-2xl mx-auto mb-8">
+            "Best Grooming" — Nurturing future leaders through academic excellence, moral integrity, and modern innovation.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <a href="#portal" className="bg-amber-500 hover:bg-amber-600 text-blue-950 font-bold px-8 py-3 rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5">
+              Access Student Portal
+            </a>
+            <a href="https://wa.me/your-number" target="_blank" rel="noreferrer" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all">
+              💬 Chat on WhatsApp
+            </a>
+          </div>
+        </div>
+      </header>
+
+      {/* 2. LIVE INTERACTIVE PORTAL SECTION */}
+      <section id="portal" className="py-16 px-4 max-w-6xl mx-auto">
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden grid md:grid-cols-12 max-w-4xl mx-auto">
+          
+          {/* Left Feature Column */}
+          <div className="md:col-span-5 bg-gradient-to-br from-blue-950 to-blue-900 text-white p-8 flex flex-col justify-between">
             <div>
-              <h1 className="text-lg font-bold text-primary">MOSH DAY SCHOOL</h1>
-              <p className="text-xs text-muted-foreground">Best Grooming</p>
+              <span className="text-xs font-bold uppercase tracking-widest text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full">
+                MDS Portal v2.0
+              </span>
+              <h2 className="text-2xl font-bold mt-4 mb-2">Secure Gateway</h2>
+              <p className="text-sm text-blue-200 leading-relaxed">
+                Setup backend database profiles seamlessly. Access report cards, check term progress, and review personalized assignments instantly.
+              </p>
+            </div>
+            <div className="mt-8 space-y-3 text-xs text-blue-200">
+              <div className="flex items-center gap-2">✔ High Performance Schema Realtime</div>
+              <div className="flex items-center gap-2">✔ Row-Level Security Enforced</div>
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#about" className="text-sm font-medium hover:text-primary transition">About</a>
-            <a href="#why-us" className="text-sm font-medium hover:text-primary transition">Why Us</a>
-            <a href="#facilities" className="text-sm font-medium hover:text-primary transition">Facilities</a>
-            <a href="#portal-section" className="text-sm font-medium hover:text-primary transition">Portal</a>
-          </div>
-          <Button onClick={handleWhatsApp} size="sm" className="bg-primary hover:bg-primary/90">
-            Chat on WhatsApp
-          </Button>
-        </div>
-      </nav>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-20 md:py-32" id="hero">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute w-72 h-72 bg-primary/5 rounded-full blur-3xl" style={{ top: "-20%", right: "-10%", transform: `translateY(${scrollY * 0.3}px)` }} />
-          <div className="absolute w-96 h-96 bg-secondary/10 rounded-full blur-3xl" style={{ bottom: "-30%", left: "-5%", transform: `translateY(${scrollY * 0.2}px)` }} />
-        </div>
-
-        <div className="container relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h1 className="text-5xl md:text-6xl font-bold text-primary leading-tight">
-                  Best Grooming Your Child Deserves
-                </h1>
-                <p className="text-lg text-foreground/80 leading-relaxed">
-                  Providing quality nursery and primary education in a safe, caring, and engaging
-                  learning environment where every child thrives.
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button onClick={handleApply} size="lg" className="bg-primary hover:bg-primary/90 text-white font-semibold">
-                  Access Portal <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-                <Button onClick={handleWhatsApp} variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/5">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Chat on WhatsApp
-                </Button>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                <img src="https://i.ibb.co/Vpr1683K/IMG-20260528-WA0094.jpg" alt="Happy children learning" className="w-full h-auto object-cover" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className="py-20 bg-white">
-        <div className="container">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663667293949/VGVDjK76hzyaqsZKMquca2/classroom-activities-gnLbegz26EbmTaT7toqMFZ.webp" alt="Class" className="rounded-2xl shadow-lg" />
-            <div className="space-y-4">
-              <h2 className="text-4xl font-bold text-primary">Nurturing Young Minds for Success</h2>
-              <p className="text-foreground/80">At MOSH DAY SCHOOL, we believe every child deserves the best grooming and educational foundation.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Portal Interface with Supabase Integration */}
-      <section id="portal-section" className="py-20 bg-gradient-to-br from-primary to-primary/80 text-white">
-        <div className="container max-w-lg">
-          <Card className="p-8 text-foreground bg-white shadow-xl border-none">
-            <h3 className="text-2xl font-bold text-primary mb-2 text-center">
-              {isLoginMode ? "Student Portal Login" : "Pupil Profile Registration"}
+          {/* Right Interactive Form Column */}
+          <div className="md:col-span-7 p-8 sm:p-10">
+            <h3 className="text-2xl font-black text-blue-950 mb-1 text-center">
+              {isAdmin ? 'Pupil Profile Registration' : 'Student Portal Login'}
             </h3>
-            <p className="text-sm text-muted-foreground text-center mb-6">
-              {isLoginMode ? "Enter details to access performance results." : "Setup backend database profiles seamlessly."}
+            <p className="text-slate-500 text-sm mb-6 text-center">
+              {isAdmin ? 'Setup backend database profiles seamlessly.' : 'Enter credentials to manage academic score dashboards.'}
             </p>
-            
-            <form onSubmit={handlePortalSubmit} className="space-y-4">
-              {!isLoginMode && (
-                <>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Pupil Full Name</label>
-                    <Input value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="e.g. Chidi Adebayo" required />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Class Assignment</label>
-                    <Input value={studentClass} onChange={(e) => setStudentClass(e.target.value)} placeholder="e.g. Primary 3 Gold" required />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Parent Phone Number</label>
-                    <Input value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} placeholder="e.g. 0802222..." required />
-                  </div>
-                </>
-              )}
 
-              <div>
-                <label className="text-sm font-medium mb-1 block">Admission Number</label>
-                <Input value={admissionNo} onChange={(e) => setAdmissionNo(e.target.value)} placeholder="e.g. MDS/2026/045" required />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1 block">Portal Password</label>
-                <Input type="password" value={portalPassword} onChange={(e) => setPortalPassword(e.target.value)} placeholder="••••••••" required />
-              </div>
-
-              {!isLoginMode && (
-                <div className="border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center justify-center bg-muted/30 relative">
-                  {uploading ? (
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  ) : studentImageUrl ? (
-                    <p className="text-xs text-emerald-600 font-medium">Image Linked Successfully ✅</p>
-                  ) : (
-                    <div className="text-center cursor-pointer">
-                      <Upload className="w-6 h-6 mx-auto text-muted-foreground" />
-                      <p className="text-xs text-primary font-medium mt-1">Add Student Image</p>
-                      <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                    </div>
-                  )}
+            {isAdmin ? (
+              /* ADMIN REGISTRATION FORM */
+              <form onSubmit={handlePortalSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Pupil Full Name</label>
+                  <input type="text" placeholder="Xenization studio" value={studentName} onChange={(e) => setStudentName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm" required />
                 </div>
-              )}
 
-              <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 text-white font-medium mt-2">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : isLoginMode ? "Login to Portal" : "Save Record"}
-              </Button>
-            </form>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Class Assignment</label>
+                    <select value={studentClass} onChange={(e) => setStudentClass(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none text-sm">
+                      <option>Crèche</option>
+                      <option>Nursery 1</option>
+                      <option>Nursery 2</option>
+                      <option>Primary 1</option>
+                      <option>Primary 2</option>
+                      <option>Primary 3</option>
+                      <option>Primary 4</option>
+                      <option>Primary 5</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Current Term</label>
+                    <select value={term} onChange={(e) => setTerm(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none text-sm">
+                      <option>First Term</option>
+                      <option>Second Term</option>
+                      <option>Third Term</option>
+                    </select>
+                  </div>
+                </div>
 
-            <div className="mt-4 text-center">
-              <button onClick={() => setIsLoginMode(!isLoginMode)} className="text-xs font-semibold text-primary hover:underline">
-                {isLoginMode ? "Switch to Admin: Register Pupil" : "Return to Student Portal Login"}
-              </button>
-            </div>
-          </Card>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Admission Number</label>
+                    <input type="text" placeholder="MDS/2026/26" value={admissionNo} onChange={(e) => setAdmissionNo(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Parent Phone Number</label>
+                    <input type="tel" placeholder="08012345678" value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm" required />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Portal Password</label>
+                  <input type="password" placeholder="••••••••" value={portalPassword} onChange={(e) => setPortalPassword(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm" required />
+                </div>
+
+                <div className="border border-dashed border-emerald-300 bg-emerald-50/50 p-2.5 rounded-xl text-center text-xs text-emerald-800 font-medium">
+                  Image Linked Successfully ✅
+                </div>
+
+                <button type="submit" disabled={loading} className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3 rounded-xl transition shadow-md flex justify-center items-center">
+                  {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Save Record'}
+                </button>
+
+                <button type="button" onClick={() => setIsAdmin(false)} className="w-full text-center text-xs text-blue-900 font-semibold hover:underline block pt-2">
+                  Return to Student Portal Login
+                </button>
+              </form>
+            ) : (
+              /* STUDENT PORTAL LOGIN FORM */
+              <form onSubmit={handlePortalLogin} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Admission Number</label>
+                  <input type="text" placeholder="e.g., MDS/2026/26" value={admissionNo} onChange={(e) => setAdmissionNo(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm" required />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Portal Password</label>
+                  <input type="password" placeholder="••••••••" value={portalPassword} onChange={(e) => setPortalPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm" required />
+                </div>
+
+                <button type="submit" disabled={loading} className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3 rounded-xl transition shadow-md flex justify-center items-center">
+                  {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Access Portal Account'}
+                </button>
+
+                <button type="button" onClick={() => setIsAdmin(true)} className="w-full text-center text-xs text-slate-500 font-medium hover:text-blue-900 block pt-4 transition">
+                  Switch to Admin: Register Pupil
+                </button>
+              </form>
+            )}
+
+          </div>
         </div>
       </section>
+
+      {/* 3. ABOUT THE SCHOOL SECTION */}
+      <section className="py-16 px-6 bg-white border-y border-slate-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-3xl font-extrabold text-blue-950 sm:text-4xl mb-3">About Our School</h2>
+            <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full"></div>
+            <p className="text-slate-600 mt-4">
+              Mosh Day School is a premier educational institution dedicated to cultivating a love for learning, critical thinking, and character building in every pupil from early childhood.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="text-2xl mb-2">🎯</div>
+              <h3 className="text-lg font-bold text-blue-950 mb-2">Our Mission</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                To provide a stimulating learning environment where children can realize their maximum potential through standard curriculum models, dedicated grooming, and deep character foundations.
+              </p>
+            </div>
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="text-2xl mb-2">👁‍🗨</div>
+              <h3 className="text-lg font-bold text-blue-950 mb-2">Our Vision</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                To be a foundational beacon of premium academic excellence, raised to produce morally sound, high-achieving leaders capable of thriving in a globally competitive society.
+              </p>
+            </div>
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="text-2xl mb-2">💎</div>
+              <h3 className="text-lg font-bold text-blue-950 mb-2">Core Values</h3>
+              <ul className="text-slate-600 text-sm space-y-1">
+                <li>• Academic Excellence</li>
+                <li>• Moral Integrity & Discipline</li>
+                <li>• Innovation & Critical Thinking</li>
+                <li>• Total Child Care & Safety</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. RESTORED WHY CHOOSE US GRID (ALL 8 CARDS) */}
+      <section className="py-16 px-6 max-w-6xl mx-auto">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <h2 className="text-3xl font-extrabold text-blue-950 sm:text-4xl mb-3">Why Choose Mosh Day School?</h2>
+          <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full"></div>
+          <p className="text-slate-600 mt-4">
+            We provide custom learning structures tailored to ensure your child receives premium attention and holistic developmental care.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          
+          {/* Card 1 */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">👨‍🏫</div>
+            <h4 className="font-bold text-blue-950 text-sm mb-1">Qualified Teachers</h4>
+            <p className="text-slate-500 text-xs leading-normal">Highly trained instructors devoted to complete developmental grooming.</p>
+          </div>
+
+          {/* Card 2 */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
+            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">💻</div>
+            <h4 className="font-bold text-blue-950 text-sm mb-1">ICT Learning</h4>
+            <p className="text-slate-500 text-xs leading-normal">Early introduction to tech fundamentals and interactive digital toolsets.</p>
+          </div>
+
+          {/* Card 3 */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
+            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">♟</div>
+            <h4 className="font-bold text-blue-950 text-sm mb-1">Chess Training</h4>
+            <p className="text-slate-500 text-xs leading-normal">Strategic thinking exercises designed to enhance intellectual capacity.</p>
+          </div>
+
+          {/* Card 4 */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
+            <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">⚽</div>
+            <h4 className="font-bold text-blue-950 text-sm mb-1">Sports Activities</h4>
+            <p className="text-slate-500 text-xs leading-normal">Healthy physical outdoor activities supporting coordination and teamwork.</p>
+          </div>
+
+          {/* Card 5 */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
+            <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">🛡</div>
+            <h4 className="font-bold text-blue-950 text-sm mb-1">Safe Environment</h4>
+            <p className="text-slate-500 text-xs leading-normal">Fully secured structures optimized for absolute parental peace of mind.</p>
+          </div>
+
+          {/* Card 6 */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
+            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">💡</div>
+            <h4 className="font-bold text-blue-950 text-sm mb-1">Modern Methods</h4>
+            <p className="text-slate-500 text-xs leading-normal">Using standard educational frameworks to speed up comprehensive understanding.</p>
+          </div>
+
+          {/* Card 7 */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
+            <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">🎪</div>
+            <h4 className="font-bold text-blue-950 text-sm mb-1">Playground</h4>
+            <p className="text-slate-500 text-xs leading-normal">Equipped dynamic recreational space ensuring cheerful child interactions.</p>
+          </div>
+
+          {/* Card 8 */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
+            <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">🎉</div>
+            <h4 className="font-bold text-blue-950 text-sm mb-1">Special Events</h4>
+            <p className="text-slate-500 text-xs leading-normal">Cultural, creative arts, and award sessions to showcase exceptional talents.</p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 5. FOOTER */}
+      <footer className="bg-blue-950 text-slate-400 py-8 px-6 text-center text-xs border-t border-blue-900">
+        <p className="font-semibold text-blue-200 mb-1">MOSH DAY SCHOOL — "Best Grooming"</p>
+        <p>&copy; 2026 All Rights Reserved.</p>
+      </footer>
+
     </div>
   );
 }
