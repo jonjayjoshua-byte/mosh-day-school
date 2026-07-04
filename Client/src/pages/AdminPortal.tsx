@@ -258,11 +258,16 @@ export default function AdminPortal() {
                 className="text-xs"
               />
               <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="border rounded-xl px-3 text-xs">
-                <option value="All">All Classes</option>
-                <option value="JSS1">JSS1</option>
-                <option value="JSS2">JSS2</option>
-                <option value="JSS3">JSS3</option>
-              </select>
+                 <option value="All">All Classes</option>
+                 <option value="Kindergarten">Kindergarten</option>
+                 <option value="Nursery 1">Nursery 1</option>
+                 <option value="Nursery 2">Nursery 2</option>
+                 <option value="Primary 1">Primary 1</option>
+                 <option value="Primary 2">Primary 2</option>
+                 <option value="Primary 3">Primary 3</option>
+                 <option value="Primary 4">Primary 4</option>
+                 <option value="Primary 5">Primary 5</option>
+                </select>
             </div>
           </div>
           
