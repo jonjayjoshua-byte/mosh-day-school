@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
-import { Plus, Award, RefreshCw, Lock, Trash2, KeyRound, Save, X } from "lucide-react";
+import { Plus, Award, Loader2, RefreshCw, Lock, Trash2, KeyRound, Save, X } from "lucide-react";
 
 export default function AdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
