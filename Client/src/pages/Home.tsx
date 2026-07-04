@@ -16,9 +16,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter"; // 1. Added wouter hook for navigation
 import { supabase, loginStudent } from "@/lib/supabase";
 
 export default function Home() {
+  const [location, setLocation] = useLocation(); // 2. Initialized location traffic switcher
   const [scrollY, setScrollY] = useState(0);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -77,7 +79,8 @@ export default function Home() {
     if (isLoginMode) {
       const result = await loginStudent(admissionNo, portalPassword);
       if (result.success) {
-        alert(`Welcome back, ${result.student.full_name}! 🎉\nClass: ${result.student.class}\nTerm: ${result.student.term}`);
+        // 3. Replaced alert box with professional route jump!
+        setLocation("/dashboard"); 
       } else {
         alert(result.error);
       }
@@ -144,7 +147,6 @@ export default function Home() {
         
         {/* 2. IMAGE TIMELINE LAYOUT */}
         <div className="space-y-6">
-          {/* Card 1: Primary Image block with overlay badge element */}
           <div className="relative pb-3">
             <div className="rounded-3xl overflow-hidden shadow-sm border border-border bg-card">
               <img 
@@ -153,7 +155,6 @@ export default function Home() {
                 className="w-full h-56 object-cover"
               />
             </div>
-            {/* Absolute offset overlay card element */}
             <div className="absolute bottom-0 left-3 bg-white py-2.5 px-4 rounded-2xl shadow-xl border border-border flex items-center gap-3 max-w-[210px]">
               <div className="w-8 h-8 rounded-xl bg-primary/5 text-primary flex items-center justify-center font-bold shrink-0">
                 <Sparkles className="w-4 h-4" />
@@ -165,7 +166,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Card 2: Secondary School Activity Image */}
           <div className="rounded-3xl overflow-hidden shadow-sm border border-border bg-card">
             <img 
               src="https://d2xsxph8kpxj0f.cloudfront.net/310519663667293949/VGVDjK76hzyaqsZKMquca2/classroom-activities-gnLbegz26EbmTaT7toqMFZ.webp" 
@@ -203,7 +203,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 4. INTERACTIVE PORTAL ACCOUNT MANAGER (SECURE GATEWAY HEADER REMOVED) */}
+        {/* 4. INTERACTIVE PORTAL ACCOUNT MANAGER */}
         <section id="portal-section" className="bg-white rounded-3xl shadow-xl border border-border overflow-hidden">
           <div className="p-6">
             <h3 className="text-base font-black text-primary text-center mb-0.5">
@@ -282,7 +282,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 5. EXPANDED FEATURES GRID (8 RICH CARDS) */}
+        {/* 5. EXPANDED FEATURES GRID */}
         <section id="why-us" className="space-y-4">
           <div className="text-center">
             <h2 className="text-lg font-black text-primary uppercase tracking-wide">Why Choose Us?</h2>
