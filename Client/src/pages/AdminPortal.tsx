@@ -109,10 +109,21 @@ export default function AdminPortal() {
     }
   };
 
+  const handleClearGrades = async (admNo: string) => {
+    if (confirm("Are you sure you want to clear all published results for this student?")) {
+      const { error } = await supabase.from("grades").delete().eq("admission_no", admNo);
+      if (error) alert(error.message);
+      else alert("Results cleared successfully!");
+    }
+  };
+
   const handlePublishAll = async () => {
     if (!selectedAdmNo || !teacherName) {
       return alert("Select student and enter teacher name!");
     }
+    
+    // First, clear any existing grades for this student to ensure remarks/data update
+    await supabase.from("grades").delete().eq("admission_no", selectedAdmNo);
     
     const payload = gradeRows.filter(r => r.subject !== "").map(r => ({
       admission_no: selectedAdmNo, 
@@ -129,7 +140,7 @@ export default function AdminPortal() {
     if (error) {
       alert(error.message);
     } else { 
-      alert("Published!"); 
+      alert("Published successfully!"); 
       setGradeRows([{ subject: "", ca: "", exam: "", grade: "" }]);
       setOverallRemark("");
     }
@@ -147,7 +158,7 @@ export default function AdminPortal() {
   };
 
   const handleDeleteStudent = async (admNo: string) => {
-    if (confirm("Delete student?")) {
+    if (confirm("Delete student and all their data?")) {
       await supabase.from("grades").delete().eq("admission_no", admNo);
       await supabase.from("students").delete().eq("admission_no", admNo);
       fetchStudents();
@@ -248,6 +259,9 @@ export default function AdminPortal() {
                     <p className="text-[10px] text-muted-foreground">{s.admission_no} • Pass: {s.portal_password}</p>
                   </div>
                   <div className="flex gap-1">
+                    <Button onClick={() => handleClearGrades(s.admission_no)} size="sm" variant="ghost">
+                      <Trash2 className="w-4 h-4 text-orange-500" />
+                    </Button>
                     <Button onClick={() => handleResetPassword(s.admission_no, s.full_name)} size="sm" variant="ghost">
                       <KeyRound className="w-4 h-4 text-blue-600" />
                     </Button>
