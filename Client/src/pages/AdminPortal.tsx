@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
-import { Plus, User, Award, Loader2, RefreshCw, Lock, Trash2, KeyRound, Save } from "lucide-react";
+import { Plus, Award, Loader2, RefreshCw, Lock, Trash2, KeyRound, Save } from "lucide-react";
 
 export default function AdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -11,7 +11,6 @@ export default function AdminPortal() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Registration and Grade states
   const [fullName, setFullName] = useState("");
   const [admissionNo, setAdmissionNo] = useState("");
   const [className, setClassName] = useState("");
@@ -35,6 +34,27 @@ export default function AdminPortal() {
 
   useEffect(() => { if (isAuthenticated) fetchStudents(); }, [isAuthenticated]);
 
+  // Auto-Grade Logic
+  const calculateGrade = (ca: string, exam: string) => {
+    const total = (parseInt(ca) || 0) + (parseInt(exam) || 0);
+    if (total >= 70) return "A";
+    if (total >= 60) return "B";
+    if (total >= 50) return "C";
+    if (total >= 40) return "D";
+    return "F";
+  };
+
+  const addRow = () => setGradeRows([...gradeRows, { subject: "", ca: "", exam: "", grade: "", remark: "" }]);
+  
+  const updateRow = (index: number, field: string, value: string) => {
+    const updated = [...gradeRows];
+    updated[index][field as keyof typeof updated[0]] = value;
+    if (field === "ca" || field === "exam") {
+      updated[index].grade = calculateGrade(updated[index].ca, updated[index].exam);
+    }
+    setGradeRows(updated);
+  };
+
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (adminPassword === "moshadmin2026") setIsAuthenticated(true);
@@ -55,39 +75,18 @@ export default function AdminPortal() {
     } catch (err: any) { alert(err.message); }
   };
 
-  // --- BULK GRADE LOGIC ---
-  const addRow = () => setGradeRows([...gradeRows, { subject: "", ca: "", exam: "", grade: "", remark: "" }]);
-  
-  const updateRow = (index: number, field: string, value: string) => {
-    const updated = [...gradeRows];
-    updated[index][field as keyof typeof updated[0]] = value;
-    setGradeRows(updated);
-  };
-
   const handlePublishAll = async () => {
     if (!selectedAdmNo || !teacherName) return alert("Select student and enter teacher name!");
-    
-    const payload = gradeRows
-      .filter(r => r.subject !== "")
-      .map(r => ({
-        admission_no: selectedAdmNo,
-        subject: r.subject,
-        ca: parseInt(r.ca) || 0,
-        exam: parseInt(r.exam) || 0,
-        grade: r.grade.toUpperCase(),
-        remark: r.remark,
-        teacher_name: teacherName
-      }));
-
+    const payload = gradeRows.filter(r => r.subject !== "").map(r => ({
+      admission_no: selectedAdmNo, subject: r.subject, ca: parseInt(r.ca) || 0,
+      exam: parseInt(r.exam) || 0, grade: r.grade.toUpperCase(),
+      remark: r.remark || "Good", teacher_name: teacherName
+    }));
     const { error } = await supabase.from("grades").insert(payload);
     if (error) alert(error.message);
-    else {
-      alert("All subjects published successfully!");
-      setGradeRows([{ subject: "", ca: "", exam: "", grade: "", remark: "" }]);
-    }
+    else { alert("Published!"); setGradeRows([{ subject: "", ca: "", exam: "", grade: "", remark: "" }]); }
   };
 
-  // --- EXISTING UTILS ---
   const handleResetPassword = async (admNo: string, name: string) => {
     const newPassword = prompt(`New password for ${name}:`);
     if (newPassword) {
@@ -122,7 +121,6 @@ export default function AdminPortal() {
           <Button onClick={fetchStudents} variant="outline" size="sm"><RefreshCw className="w-4 h-4 mr-2" /> Reload</Button>
         </header>
 
-        {/* BULK UPLOAD CARD */}
         <Card className="p-5 rounded-3xl border bg-white space-y-4">
           <h2 className="text-xs font-black uppercase text-primary border-b pb-2 flex items-center gap-2">
             <Award className="w-4 h-4" /> Bulk Subject Upload
@@ -132,7 +130,6 @@ export default function AdminPortal() {
             {students.map(s => <option key={s.admission_no} value={s.admission_no}>{s.full_name}</option>)}
           </select>
           <Input placeholder="Teacher Name" value={teacherName} onChange={e => setTeacherName(e.target.value)} />
-          
           <div className="space-y-2">
             {gradeRows.map((row, i) => (
               <div key={i} className="grid grid-cols-5 gap-2">
@@ -147,7 +144,6 @@ export default function AdminPortal() {
           <Button onClick={handlePublishAll} className="w-full bg-emerald-600"><Save className="w-4 h-4 mr-2" /> Publish All Subjects</Button>
         </Card>
 
-        {/* DIRECTORY */}
         <Card className="p-5 rounded-3xl border bg-white">
           <h2 className="text-xs font-black uppercase text-primary mb-3">System Directory</h2>
           {students.map(s => (
