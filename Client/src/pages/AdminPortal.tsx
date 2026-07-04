@@ -124,12 +124,13 @@ export default function AdminPortal() {
         
       if (error) throw error;
       alert(`All previous grades wiped successfully for ${admNo}!`);
-      window.location.reload();
+      await fetchStudents(); // Re-fetch data instantly without kicking you out
     } catch (err: any) {
       alert(err.message);
     }
   };
 
+  // --- FIXED: REPLACES HARD RELOAD WITH STATE RE-FETCH TO KEEP YOU LOGGED IN ---
   const handlePromoteOrChange = async (admNo: string, currentClass: string, currentTerm: string) => {
     const newClass = prompt("Enter new Class (Leave blank to keep current):", currentClass);
     const newTerm = prompt("Enter new Term (Leave blank to keep current):", currentTerm);
@@ -153,10 +154,31 @@ export default function AdminPortal() {
       if (error) throw error;
       
       alert("Student profile metadata records synchronized!");
+      await fetchStudents(); // Updates the UI state smoothly without requiring re-login
       
-      // Forces browser shell to explicitly drop aggressive storage caching
-      window.location.reload();
-      
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  // --- NEW FEATURE: DELETE STUDENT RECORD COMPLETELY ---
+  const handleDeleteStudent = async (admNo: string, name: string) => {
+    if (!confirm(`CRITICAL WARNING: Are you sure you want to completely delete ${name} (${admNo}) from the system? This removes their profile permanently.`)) return;
+    
+    try {
+      // First wipe any scores associated with them to prevent reference leaks
+      await supabase.from("grades").delete().eq("admission_no", admNo.trim());
+
+      // Delete student profile row
+      const { error } = await supabase
+        .from("students")
+        .delete()
+        .eq("admission_no", admNo.trim());
+
+      if (error) throw error;
+
+      alert("Student profile permanently deleted from registry.");
+      await fetchStudents();
     } catch (err: any) {
       alert(err.message);
     }
@@ -290,6 +312,13 @@ export default function AdminPortal() {
                       variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-destructive/20 text-destructive hover:bg-destructive/5"
                     >
                       Wipe Scores
+                    </Button>
+                    <Button 
+                      onClick={() => handleDeleteStudent(s.admission_no, s.full_name)}
+                      variant="destructive" size="sm" className="h-7 w-7 rounded-lg p-0 flex items-center justify-center"
+                      title="Delete Student Record Completely"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
