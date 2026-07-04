@@ -5,13 +5,15 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard"; // 1. Imported our future Dashboard page
+import Dashboard from "./pages/Dashboard"; 
+import AdminPortal from "./pages/AdminPortal"; // 1. Imported the AdminPortal page
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
-      <Route path={"/dashboard"} component={Dashboard} /> {/* 2. Added the dashboard route */}
+      <Route path={"/dashboard"} component={Dashboard} /> 
+      <Route path={"/admin"} component={AdminPortal} /> {/* 2. Added the admin route */}
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
