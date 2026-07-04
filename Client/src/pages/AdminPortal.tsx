@@ -3,31 +3,28 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
-import { Plus, User, Award, Loader2, RefreshCw, Lock, Eye, EyeOff } from "lucide-react";
+import { Plus, User, Award, Loader2, RefreshCw, Lock, Eye, EyeOff, Trash2 } from "lucide-react";
 
 export default function AdminPortal() {
-  // Gate Security States
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Core Admin States
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Form states for adding a student
   const [fullName, setFullName] = useState("");
   const [admissionNo, setAdmissionNo] = useState("");
   const [className, setClassName] = useState("");
   const [term, setTerm] = useState("Third Term");
 
-  // Form states for uploading grades
   const [selectedAdmNo, setSelectedAdmNo] = useState("");
   const [subject, setSubject] = useState("");
   const [caScore, setCaScore] = useState("");
   const [examScore, setExamScore] = useState("");
   const [grade, setGrade] = useState("");
-  const [teacherRemark, setTeacherRemark] = useState(""); // 1. Added remark tracking state
+  const [teacherRemark, setTeacherRemark] = useState("");
+  const [teacherName, setTeacherName] = useState(""); // Added teacher name state
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -51,7 +48,6 @@ export default function AdminPortal() {
     }
   }, [isAuthenticated]);
 
-  // Handle Admin Gate Login
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (adminPassword === "moshadmin2026") {
@@ -89,9 +85,8 @@ export default function AdminPortal() {
 
   const handleUploadGrade = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 2. Added verification check to ensure remark isn't left blank
-    if (!selectedAdmNo || !subject || !caScore || !examScore || !grade || !teacherRemark) {
-      return alert("Fill all grade parameters, including the teacher remark!");
+    if (!selectedAdmNo || !subject || !caScore || !examScore || !grade || !teacherRemark || !teacherName) {
+      return alert("Fill all fields, including the teacher's name and remark!");
     }
 
     try {
@@ -102,23 +97,65 @@ export default function AdminPortal() {
           ca: parseInt(caScore),
           exam: parseInt(examScore),
           grade: grade.toUpperCase(),
-          remark: teacherRemark // 3. Replaced static text with your custom state value
+          remark: teacherRemark,
+          teacher_name: teacherName // Saves custom teacher name
         }
       ]);
       if (error) throw error;
 
-      alert(`Grade and custom remark added successfully for ${selectedAdmNo}!`);
+      alert(`Grade added successfully for ${selectedAdmNo}!`);
       setSubject("");
       setCaScore("");
       setExamScore("");
       setGrade("");
-      setTeacherRemark(""); // 4. Clear comment line out on successful post
+      setTeacherRemark("");
     } catch (err: any) {
       alert(err.message);
     }
   };
 
-  // 1. RENDER GATEWAY LOCK SCREEN IF NOT AUTHENTICATED
+  // --- NEW: FUNCTION TO CLEAR ALL SCORES FOR A STUDENT ---
+  const handleClearScores = async (admNo: string) => {
+    if (!confirm(`Are you sure you want to completely wipe out all grades for student ${admNo}? This cannot be undone.`)) return;
+    
+    try {
+      const { error } = await supabase
+        .from("grades")
+        .delete()
+        .ilike("admission_no", admNo);
+        
+      if (error) throw error;
+      alert(`All previous grades wiped successfully for ${admNo}!`);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  // --- NEW: FUNCTION TO UPDATE CLASS OR TERM ---
+  const handlePromoteOrChange = async (id: string, currentClass: string, currentTerm: string) => {
+    const newClass = prompt("Enter new Class (Leave blank to keep current):", currentClass);
+    const newTerm = prompt("Enter new Term (Leave blank to keep current):", currentTerm);
+    
+    if (newClass === null && newTerm === null) return;
+
+    try {
+      const updates: any = {};
+      if (newClass) updates.class = newClass;
+      if (newTerm) updates.term = newTerm;
+
+      const { error } = await supabase
+        .from("students")
+        .update(updates)
+        .eq("id", id);
+
+      if (error) throw error;
+      alert("Student profile metadata records synchronized!");
+      fetchStudents();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4 text-foreground font-sans antialiased">
@@ -129,42 +166,27 @@ export default function AdminPortal() {
           <div>
             <h1 className="text-lg font-black text-primary tracking-tight uppercase">Admin Gate Lock</h1>
             <p className="text-xs text-muted-foreground font-semibold px-2 mt-1">
-              This area is restricted to authorized school administrators. Enter the system control passkey to unlock.
+              This area is restricted to authorized school administrators.
             </p>
           </div>
-
           <form onSubmit={handleAdminLogin} className="space-y-3 text-left">
-            <div className="relative">
-              <Input 
-                type={showPassword ? "text" : "password"} 
-                placeholder="Enter Staff Admin Password" 
-                value={adminPassword}
-                onChange={e => setAdminPassword(e.target.value)}
-                className="rounded-xl text-xs h-11 pr-10 font-medium"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            <Input 
+              type={showPassword ? "text" : "password"} 
+              placeholder="Enter Staff Admin Password" 
+              value={adminPassword}
+              onChange={e => setAdminPassword(e.target.value)}
+              className="rounded-xl text-xs h-11 pr-10 font-medium"
+              required
+            />
             <Button type="submit" className="w-full rounded-xl text-xs font-bold h-11">
               Verify & Unlock Panel
             </Button>
           </form>
-
-          <a href="/" className="inline-block text-[10px] font-bold text-muted-foreground hover:text-primary transition uppercase tracking-wider underline">
-            &larr; Back to Student Portal Login
-          </a>
         </Card>
       </div>
     );
   }
 
-  // 2. RENDER FULL MANAGEMENT PANEL IF AUTHENTICATED
   return (
     <div className="min-h-screen bg-muted/20 p-4 md:p-8 text-foreground font-sans antialiased">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -180,23 +202,28 @@ export default function AdminPortal() {
         </header>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* SECTION 1: ADD NEW STUDENT */}
+          {/* REGISTER STUDENT */}
           <Card className="p-5 rounded-3xl border bg-white space-y-4 shadow-xs">
             <div className="flex items-center gap-2 border-b pb-2">
               <User className="w-4 h-4 text-primary" />
               <h2 className="text-xs font-black uppercase text-primary tracking-wide">Register Student Profile</h2>
             </div>
             <form onSubmit={handleCreateStudent} className="space-y-3">
-              <Input placeholder="Full Name (e.g. John Doe)" value={fullName} onChange={e => setFullName(e.target.value)} className="rounded-xl text-xs h-10" />
-              <Input placeholder="Admission Number (e.g. MDS/2026/26)" value={admissionNo} onChange={e => setAdmissionNo(e.target.value)} className="rounded-xl text-xs h-10" />
+              <Input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} className="rounded-xl text-xs h-10" />
+              <Input placeholder="Admission Number" value={admissionNo} onChange={e => setAdmissionNo(e.target.value)} className="rounded-xl text-xs h-10" />
               <Input placeholder="Class (e.g. Primary 5)" value={className} onChange={e => setClassName(e.target.value)} className="rounded-xl text-xs h-10" />
+              <select value={term} onChange={e => setTerm(e.target.value)} className="w-full rounded-xl border border-input h-10 px-3 text-xs">
+                <option value="First Term">First Term</option>
+                <option value="Second Term">Second Term</option>
+                <option value="Third Term">Third Term</option>
+              </select>
               <Button type="submit" className="w-full rounded-xl text-xs font-bold h-10 gap-1.5">
                 <Plus className="w-4 h-4" /> Add Student Record
               </Button>
             </form>
           </Card>
 
-          {/* SECTION 2: UPLOAD GRADES */}
+          {/* UPLOAD GRADES */}
           <Card className="p-5 rounded-3xl border bg-white space-y-4 shadow-xs">
             <div className="flex items-center gap-2 border-b pb-2">
               <Award className="w-4 h-4 text-primary" />
@@ -206,36 +233,31 @@ export default function AdminPortal() {
               <select 
                 value={selectedAdmNo} 
                 onChange={e => setSelectedAdmNo(e.target.value)}
-                className="w-full rounded-xl border border-input bg-background px-3 h-10 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-full rounded-xl border border-input bg-background px-3 h-10 text-xs font-medium"
               >
                 <option value="">-- Select Target Student --</option>
                 {students.map(s => (
-                  <option key={s.id} value={s.admission_no}>{s.full_name} ({s.admission_no})</option>
+                  <option key={s.id} value={s.admission_no}>{s.full_name}</option>
                 ))}
               </select>
-              <Input placeholder="Subject Name (e.g. Database Management)" value={subject} onChange={e => setSubject(e.target.value)} className="rounded-xl text-xs h-10" />
+              <Input placeholder="Subject Name" value={subject} onChange={e => setSubject(e.target.value)} className="rounded-xl text-xs h-10" />
               <div className="grid grid-cols-3 gap-2">
                 <Input type="number" placeholder="CA" value={caScore} onChange={e => setCaScore(e.target.value)} className="rounded-xl text-xs h-10 text-center" />
                 <Input type="number" placeholder="Exam" value={examScore} onChange={e => setExamScore(e.target.value)} className="rounded-xl text-xs h-10 text-center" />
                 <Input placeholder="Grade" value={grade} onChange={e => setGrade(e.target.value)} className="rounded-xl text-xs h-10 text-center" />
               </div>
               
-              {/* 5. BRAND NEW INPUT BOX FOR REMARKS */}
-              <Input 
-                placeholder="Teacher's Remark (e.g. Excellent progress this term!)" 
-                value={teacherRemark} 
-                onChange={e => setTeacherRemark(e.target.value)} 
-                className="rounded-xl text-xs h-10" 
-              />
+              <Input placeholder="Teacher's Name (e.g. Mr. S. Okafor)" value={teacherName} onChange={e => setTeacherName(e.target.value)} className="rounded-xl text-xs h-10" />
+              <Input placeholder="Teacher's Remark" value={teacherRemark} onChange={e => setTeacherRemark(e.target.value)} className="rounded-xl text-xs h-10" />
 
-              <Button type="submit" variant="default" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold h-10 gap-1.5">
+              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold h-10">
                 Publish Subject Result
               </Button>
             </form>
           </Card>
         </div>
 
-        {/* SECTION 3: SYSTEM DIRECTORY */}
+        {/* SYSTEM DIRECTORY WITH ACTION BUTTONS */}
         <Card className="p-5 rounded-3xl border bg-white shadow-xs">
           <h2 className="text-xs font-black uppercase text-primary tracking-wide mb-3">Live System Directory</h2>
           {loading ? (
@@ -243,14 +265,25 @@ export default function AdminPortal() {
           ) : (
             <div className="divide-y text-xs font-medium max-h-60 overflow-y-auto">
               {students.map(s => (
-                <div key={s.id} className="py-2.5 flex justify-between items-center">
+                <div key={s.id} className="py-3 flex justify-between items-center gap-2">
                   <div>
                     <p className="font-bold text-foreground">{s.full_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.admission_no} &bull; {s.class}</p>
+                    <p className="text-[10px] text-muted-foreground">{s.admission_no} &bull; <span className="text-primary font-bold">{s.class} ({s.term})</span></p>
                   </div>
-                  <a href={`/dashboard?admissionNo=${encodeURIComponent(s.admission_no)}`} target="_blank" rel="noreferrer">
-                    <Button variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg">View Portal</Button>
-                  </a>
+                  <div className="flex items-center gap-1.5">
+                    <Button 
+                      onClick={() => handlePromoteOrChange(s.id, s.class, s.term)}
+                      variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50"
+                    >
+                      Edit Class/Term
+                    </Button>
+                    <Button 
+                      onClick={() => handleClearScores(s.admission_no)}
+                      variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-destructive/20 text-destructive hover:bg-destructive/5"
+                    >
+                      <Trash2 className="w-3 h-3" /> Clear Scores
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
