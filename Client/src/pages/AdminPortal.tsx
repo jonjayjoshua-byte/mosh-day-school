@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
-import { Award, RefreshCw, Lock, Trash2, KeyRound, Save } from "lucide-react";
+import { Plus, Award, RefreshCw, Lock, Trash2, KeyRound, Save, X } from "lucide-react";
 
 export default function AdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -11,6 +11,7 @@ export default function AdminPortal() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Registration states
   const [fullName, setFullName] = useState("");
   const [admissionNo, setAdmissionNo] = useState("");
   const [className, setClassName] = useState("");
@@ -18,9 +19,11 @@ export default function AdminPortal() {
   const [parentPhone, setParentPhone] = useState("");
   const [studentPassword, setStudentPassword] = useState("");
 
+  // Grade states
   const [selectedAdmNo, setSelectedAdmNo] = useState("");
   const [teacherName, setTeacherName] = useState("");
-  const [gradeRows, setGradeRows] = useState([{ subject: "", ca: "", exam: "", grade: "", remark: "" }]);
+  const [overallRemark, setOverallRemark] = useState("");
+  const [gradeRows, setGradeRows] = useState([{ subject: "", ca: "", exam: "", grade: "" }]);
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -34,7 +37,6 @@ export default function AdminPortal() {
 
   useEffect(() => { if (isAuthenticated) fetchStudents(); }, [isAuthenticated]);
 
-  // Auto-Grade Logic
   const calculateGrade = (ca: string, exam: string) => {
     const total = (parseInt(ca) || 0) + (parseInt(exam) || 0);
     if (total >= 70) return "A";
@@ -44,7 +46,12 @@ export default function AdminPortal() {
     return "F";
   };
 
-  const addRow = () => setGradeRows([...gradeRows, { subject: "", ca: "", exam: "", grade: "", remark: "" }]);
+  const addRow = () => setGradeRows([...gradeRows, { subject: "", ca: "", exam: "", grade: "" }]);
+  
+  const removeRow = (index: number) => {
+    const updated = gradeRows.filter((_, i) => i !== index);
+    setGradeRows(updated);
+  };
   
   const updateRow = (index: number, field: string, value: string) => {
     const updated = [...gradeRows];
@@ -61,6 +68,20 @@ export default function AdminPortal() {
     else { alert("Invalid Passkey!"); setAdminPassword(""); }
   };
 
+  const handleCreateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from("students").insert([{ 
+        full_name: fullName.trim(), admission_no: admissionNo.trim(), class: className.trim(), 
+        term, parent_phone: parentPhone.trim(), portal_password: studentPassword.trim(), student_password: studentPassword.trim() 
+      }]);
+      if (error) throw error;
+      alert("Student Registered!");
+      setFullName(""); setAdmissionNo(""); setClassName(""); setParentPhone(""); setStudentPassword("");
+      fetchStudents();
+    } catch (err: any) { alert(err.message); }
+  };
+
   const handlePublishAll = async () => {
     if (!selectedAdmNo || !teacherName) return alert("Select student and enter teacher name!");
     const payload = gradeRows.filter(r => r.subject !== "").map(r => ({
@@ -69,12 +90,16 @@ export default function AdminPortal() {
       ca: parseInt(r.ca) || 0,
       exam: parseInt(r.exam) || 0, 
       grade: r.grade.toUpperCase(),
-      remark: r.remark || "Good", 
+      remark: overallRemark,
       teacher_name: teacherName
     }));
     const { error } = await supabase.from("grades").insert(payload);
     if (error) alert(error.message);
-    else { alert("Published!"); setGradeRows([{ subject: "", ca: "", exam: "", grade: "", remark: "" }]); }
+    else { 
+      alert("Published!"); 
+      setGradeRows([{ subject: "", ca: "", exam: "", grade: "" }]);
+      setOverallRemark("");
+    }
   };
 
   const handleResetPassword = async (admNo: string, name: string) => {
@@ -111,44 +136,68 @@ export default function AdminPortal() {
           <Button onClick={fetchStudents} variant="outline" size="sm"><RefreshCw className="w-4 h-4 mr-2" /> Reload</Button>
         </header>
 
-        <Card className="p-5 rounded-3xl border bg-white space-y-4">
-          <h2 className="text-xs font-black uppercase text-primary border-b pb-2 flex items-center gap-2">
-            <Award className="w-4 h-4" /> Bulk Subject Upload
-          </h2>
-          <select value={selectedAdmNo} onChange={e => setSelectedAdmNo(e.target.value)} className="w-full border rounded-xl p-2 text-xs">
-            <option value="">-- Select Student --</option>
-            {students.map(s => <option key={s.admission_no} value={s.admission_no}>{s.full_name}</option>)}
-          </select>
-          <Input placeholder="Teacher Name" value={teacherName} onChange={e => setTeacherName(e.target.value)} />
-          
-          <div className="space-y-4">
-            {gradeRows.map((row, i) => (
-              <div key={i} className="space-y-2 p-2 border rounded-xl bg-muted/10">
-                <div className="grid grid-cols-5 gap-2">
-                  <Input placeholder="Subj" value={row.subject} onChange={e => updateRow(i, "subject", e.target.value)} className="col-span-2 text-[10px]" />
-                  <Input placeholder="CA" value={row.ca} onChange={e => updateRow(i, "ca", e.target.value)} className="text-[10px]" />
-                  <Input placeholder="Ex" value={row.exam} onChange={e => updateRow(i, "exam", e.target.value)} className="text-[10px]" />
-                  <Input placeholder="Gr" value={row.grade} onChange={e => updateRow(i, "grade", e.target.value)} className="text-[10px]" />
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="p-5 rounded-3xl border bg-white space-y-4">
+            <h2 className="text-xs font-black uppercase text-primary border-b pb-2">Register Student</h2>
+            <form onSubmit={handleCreateStudent} className="space-y-3">
+              <Input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} />
+              <Input placeholder="Admission No" value={admissionNo} onChange={e => setAdmissionNo(e.target.value)} />
+              <Input placeholder="Class" value={className} onChange={e => setClassName(e.target.value)} />
+              <Input placeholder="Parent Phone" value={parentPhone} onChange={e => setParentPhone(e.target.value)} />
+              <Input placeholder="Set Password" value={studentPassword} onChange={e => setStudentPassword(e.target.value)} />
+              <select value={term} onChange={e => setTerm(e.target.value)} className="w-full border rounded-xl p-2 text-xs">
+                <option value="First Term">First Term</option>
+                <option value="Second Term">Second Term</option>
+                <option value="Third Term">Third Term</option>
+              </select>
+              <Button type="submit" className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Student</Button>
+            </form>
+          </Card>
+
+          <Card className="p-5 rounded-3xl border bg-white space-y-4">
+            <h2 className="text-xs font-black uppercase text-primary border-b pb-2 flex items-center gap-2">
+              <Award className="w-4 h-4" /> Bulk Subject Upload
+            </h2>
+            <select value={selectedAdmNo} onChange={e => setSelectedAdmNo(e.target.value)} className="w-full border rounded-xl p-2 text-xs">
+              <option value="">-- Select Student --</option>
+              {students.map(s => <option key={s.admission_no} value={s.admission_no}>{s.full_name}</option>)}
+            </select>
+            <Input placeholder="Teacher Name" value={teacherName} onChange={e => setTeacherName(e.target.value)} />
+            <Input placeholder="Overall Teacher Remark" value={overallRemark} onChange={e => setOverallRemark(e.target.value)} />
+            
+            <div className="space-y-2">
+              {gradeRows.map((row, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <div className="grid grid-cols-4 gap-2 flex-grow">
+                    <Input placeholder="Subj" value={row.subject} onChange={e => updateRow(i, "subject", e.target.value)} className="text-[10px]" />
+                    <Input placeholder="CA" value={row.ca} onChange={e => updateRow(i, "ca", e.target.value)} className="text-[10px]" />
+                    <Input placeholder="Ex" value={row.exam} onChange={e => updateRow(i, "exam", e.target.value)} className="text-[10px]" />
+                    <Input placeholder="Gr" value={row.grade} onChange={e => updateRow(i, "grade", e.target.value)} className="text-[10px]" />
+                  </div>
+                  <Button onClick={() => removeRow(i)} variant="ghost" size="sm" className="text-red-500 p-2"><X className="w-4 h-4" /></Button>
                 </div>
-                <Input placeholder="Teacher's Remark" value={row.remark} onChange={e => updateRow(i, "remark", e.target.value)} className="text-[10px]" />
-              </div>
-            ))}
-            <Button onClick={addRow} variant="outline" size="sm" className="w-full text-xs">+ Add Row</Button>
-          </div>
-          <Button onClick={handlePublishAll} className="w-full bg-emerald-600"><Save className="w-4 h-4 mr-2" /> Publish All Subjects</Button>
-        </Card>
+              ))}
+              <Button onClick={addRow} variant="outline" size="sm" className="w-full text-xs">+ Add Subject Row</Button>
+            </div>
+            <Button onClick={handlePublishAll} className="w-full bg-emerald-600"><Save className="w-4 h-4 mr-2" /> Publish All Subjects</Button>
+          </Card>
+        </div>
 
         <Card className="p-5 rounded-3xl border bg-white">
           <h2 className="text-xs font-black uppercase text-primary mb-3">System Directory</h2>
-          {students.map(s => (
-            <div key={s.admission_no} className="py-2 flex justify-between items-center border-b text-xs">
-              <div><p className="font-bold">{s.full_name}</p><p className="text-[10px] text-muted-foreground">{s.admission_no} • Pass: {s.portal_password}</p></div>
-              <div className="flex gap-1">
-                <Button onClick={() => handleResetPassword(s.admission_no, s.full_name)} size="sm" variant="ghost"><KeyRound className="w-4 h-4 text-blue-600" /></Button>
-                <Button onClick={() => handleDeleteStudent(s.admission_no)} size="sm" variant="destructive"><Trash2 className="w-4 h-4" /></Button>
-              </div>
+          {loading ? <Loader2 className="animate-spin mx-auto" /> : (
+            <div className="divide-y text-xs">
+              {students.map(s => (
+                <div key={s.admission_no} className="py-3 flex justify-between items-center">
+                  <div><p className="font-bold">{s.full_name}</p><p className="text-[10px] text-muted-foreground">{s.admission_no} • Pass: {s.portal_password}</p></div>
+                  <div className="flex gap-1">
+                    <Button onClick={() => handleResetPassword(s.admission_no, s.full_name)} size="sm" variant="ghost"><KeyRound className="w-4 h-4 text-blue-600" /></Button>
+                    <Button onClick={() => handleDeleteStudent(s.admission_no)} size="sm" variant="destructive"><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </Card>
       </div>
     </div>
