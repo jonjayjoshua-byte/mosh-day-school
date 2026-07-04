@@ -27,14 +27,17 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
-        const admissionNo = params.get("admissionNo");
+        const rawAdmissionNo = params.get("admissionNo");
 
-        if (!admissionNo) {
+        if (!rawAdmissionNo) {
           setLocation("/");
           return;
         }
 
-        // 1. Fetch Profile Data (Using .ilike for case insensitivity)
+        // Cleanly decode %2F back into standard / forward slashes
+        const admissionNo = decodeURIComponent(rawAdmissionNo);
+
+        // 1. Fetch Profile Data (Using case-insensitive .ilike)
         const { data: studentData, error: studentError } = await supabase
           .from("students")
           .select("*")
@@ -44,7 +47,7 @@ export default function Dashboard() {
         if (studentError) throw studentError;
         setStudent(studentData);
 
-        // 2. Fetch Live Relational Grades Data (Using .ilike for case insensitivity)
+        // 2. Fetch Live Relational Grades Data (Using case-insensitive .ilike)
         const { data: gradesData, error: gradesError } = await supabase
           .from("grades")
           .select("*")
