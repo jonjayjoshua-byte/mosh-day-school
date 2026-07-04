@@ -11,6 +11,10 @@ export default function AdminPortal() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // New States for Search and Class Filter
+  const [searchTerm, setSearchTerm] = useState("");
+  const [classFilter, setClassFilter] = useState("All");
+
   // Registration states
   const [fullName, setFullName] = useState("");
   const [admissionNo, setAdmissionNo] = useState("");
@@ -122,7 +126,6 @@ export default function AdminPortal() {
       return alert("Select student and enter teacher name!");
     }
     
-    // First, clear any existing grades for this student to ensure remarks/data update
     await supabase.from("grades").delete().eq("admission_no", selectedAdmNo);
     
     const payload = gradeRows.filter(r => r.subject !== "").map(r => ({
@@ -245,18 +248,41 @@ export default function AdminPortal() {
         </div>
 
         <Card className="p-5 rounded-3xl border bg-white">
-          <h2 className="text-xs font-black uppercase text-primary mb-3">System Directory</h2>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
+            <h2 className="text-xs font-black uppercase text-primary">System Directory</h2>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Input 
+                placeholder="Search name/adm..." 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)} 
+                className="text-xs"
+              />
+              <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="border rounded-xl px-3 text-xs">
+                <option value="All">All Classes</option>
+                <option value="JSS1">JSS1</option>
+                <option value="JSS2">JSS2</option>
+                <option value="JSS3">JSS3</option>
+              </select>
+            </div>
+          </div>
+          
           {loading ? (
             <div className="flex justify-center p-4">
               <Loader2 className="animate-spin w-6 h-6 text-primary" />
             </div>
           ) : (
             <div className="divide-y text-xs">
-              {students.map(s => (
+              {students
+                .filter(s => 
+                  (classFilter === "All" || s.class === classFilter) &&
+                  (s.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                   s.admission_no.toLowerCase().includes(searchTerm.toLowerCase()))
+                )
+                .map(s => (
                 <div key={s.admission_no} className="py-3 flex justify-between items-center">
                   <div>
                     <p className="font-bold">{s.full_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.admission_no} • Pass: {s.portal_password}</p>
+                    <p className="text-[10px] text-muted-foreground">{s.admission_no} • {s.class} • Pass: {s.portal_password}</p>
                   </div>
                   <div className="flex gap-1">
                     <Button onClick={() => handleClearGrades(s.admission_no)} size="sm" variant="ghost">
