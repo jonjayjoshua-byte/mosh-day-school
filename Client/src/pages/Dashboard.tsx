@@ -34,21 +34,21 @@ export default function Dashboard() {
           return;
         }
 
-        // 1. Fetch Profile Data
+        // 1. Fetch Profile Data (Using .ilike for case insensitivity)
         const { data: studentData, error: studentError } = await supabase
           .from("students")
           .select("*")
-          .eq("admission_no", admissionNo)
+          .ilike("admission_no", admissionNo)
           .single();
 
         if (studentError) throw studentError;
         setStudent(studentData);
 
-        // 2. Fetch Live Relational Grades Data
+        // 2. Fetch Live Relational Grades Data (Using .ilike for case insensitivity)
         const { data: gradesData, error: gradesError } = await supabase
           .from("grades")
           .select("*")
-          .eq("admission_no", admissionNo)
+          .ilike("admission_no", admissionNo)
           .order("subject", { ascending: true });
 
         if (gradesError) throw gradesError;
