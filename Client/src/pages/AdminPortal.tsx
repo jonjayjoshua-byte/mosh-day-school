@@ -27,6 +27,7 @@ export default function AdminPortal() {
   const [caScore, setCaScore] = useState("");
   const [examScore, setExamScore] = useState("");
   const [grade, setGrade] = useState("");
+  const [teacherRemark, setTeacherRemark] = useState(""); // 1. Added remark tracking state
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -53,7 +54,6 @@ export default function AdminPortal() {
   // Handle Admin Gate Login
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // CHANGE THIS STRING TO SET YOUR SECRET ADMIN PASSWORD
     if (adminPassword === "moshadmin2026") {
       setIsAuthenticated(true);
     } else {
@@ -89,8 +89,9 @@ export default function AdminPortal() {
 
   const handleUploadGrade = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAdmNo || !subject || !caScore || !examScore || !grade) {
-      return alert("Fill all grade parameters");
+    // 2. Added verification check to ensure remark isn't left blank
+    if (!selectedAdmNo || !subject || !caScore || !examScore || !grade || !teacherRemark) {
+      return alert("Fill all grade parameters, including the teacher remark!");
     }
 
     try {
@@ -101,16 +102,17 @@ export default function AdminPortal() {
           ca: parseInt(caScore),
           exam: parseInt(examScore),
           grade: grade.toUpperCase(),
-          remark: "Good performance, keep pushing!"
+          remark: teacherRemark // 3. Replaced static text with your custom state value
         }
       ]);
       if (error) throw error;
 
-      alert(`Grade added successfully for ${selectedAdmNo}!`);
+      alert(`Grade and custom remark added successfully for ${selectedAdmNo}!`);
       setSubject("");
       setCaScore("");
       setExamScore("");
       setGrade("");
+      setTeacherRemark(""); // 4. Clear comment line out on successful post
     } catch (err: any) {
       alert(err.message);
     }
@@ -217,6 +219,15 @@ export default function AdminPortal() {
                 <Input type="number" placeholder="Exam" value={examScore} onChange={e => setExamScore(e.target.value)} className="rounded-xl text-xs h-10 text-center" />
                 <Input placeholder="Grade" value={grade} onChange={e => setGrade(e.target.value)} className="rounded-xl text-xs h-10 text-center" />
               </div>
+              
+              {/* 5. BRAND NEW INPUT BOX FOR REMARKS */}
+              <Input 
+                placeholder="Teacher's Remark (e.g. Excellent progress this term!)" 
+                value={teacherRemark} 
+                onChange={e => setTeacherRemark(e.target.value)} 
+                className="rounded-xl text-xs h-10" 
+              />
+
               <Button type="submit" variant="default" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold h-10 gap-1.5">
                 Publish Subject Result
               </Button>
