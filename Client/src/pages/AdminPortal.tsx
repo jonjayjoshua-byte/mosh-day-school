@@ -12,6 +12,7 @@ export default function AdminPortal() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Registration form fields
   const [fullName, setFullName] = useState("");
   const [admissionNo, setAdmissionNo] = useState("");
   const [className, setClassName] = useState("");
@@ -19,6 +20,7 @@ export default function AdminPortal() {
   const [parentPhone, setParentPhone] = useState("");
   const [studentPassword, setStudentPassword] = useState("");
 
+  // Grade upload fields
   const [selectedAdmNo, setSelectedAdmNo] = useState("");
   const [subject, setSubject] = useState("");
   const [caScore, setCaScore] = useState("");
@@ -30,7 +32,10 @@ export default function AdminPortal() {
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from("students").select("*").order("full_name", { ascending: true });
+      const { data, error } = await supabase
+        .from("students")
+        .select("*")
+        .order("full_name", { ascending: true });
       if (error) throw error;
       setStudents(data || []);
     } catch (err) {
@@ -41,93 +46,170 @@ export default function AdminPortal() {
   };
 
   useEffect(() => {
-    if (isAuthenticated) fetchStudents();
+    if (isAuthenticated) {
+      fetchStudents();
+    }
   }, [isAuthenticated]);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminPassword === "moshadmin2026") setIsAuthenticated(true);
-    else { alert("Invalid Admin Gateway Passkey!"); setAdminPassword(""); }
+    if (adminPassword === "moshadmin2026") {
+      setIsAuthenticated(true);
+    } else {
+      alert("Invalid Admin Gateway Passkey!");
+      setAdminPassword("");
+    }
   };
 
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !admissionNo || !className || !parentPhone || !studentPassword) {
-      return alert("Fill all fields, including Phone and Student Password!");
+      return alert("Please fill all fields, including Parent Phone and Access Password!");
     }
+
     try {
-      const { error } = await supabase.from("students").insert([{ 
-        full_name: fullName.trim(), 
-        admission_no: admissionNo.trim(), 
-        class: className.trim(), 
-        term, 
-        parent_phone: parentPhone.trim(), 
-        student_password: studentPassword.trim() 
-      }]);
+      // Sending data to all required columns visible in the Supabase schema
+      const { error } = await supabase.from("students").insert([
+        { 
+          full_name: fullName.trim(), 
+          admission_no: admissionNo.trim(), 
+          class: className.trim(), 
+          term,
+          parent_phone: parentPhone.trim(),
+          portal_password: studentPassword.trim(),  // Satisfies the original column constraint
+          student_password: studentPassword.trim() // Satisfies the new column setup
+        }
+      ]);
       if (error) throw error;
-      alert("Student Registered successfully!");
-      setFullName(""); setAdmissionNo(""); setClassName(""); setParentPhone(""); setStudentPassword("");
+      
+      alert("Student Profile Registered successfully!");
+      setFullName("");
+      setAdmissionNo("");
+      setClassName("");
+      setParentPhone("");
+      setStudentPassword("");
       fetchStudents();
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handleUploadGrade = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAdmNo || !subject || !caScore || !examScore || !grade || !teacherRemark || !teacherName) {
-      return alert("Fill all fields!");
+      return alert("Fill all fields, including the teacher's name and remark!");
     }
+
     try {
-      const { error } = await supabase.from("grades").insert([{
-        admission_no: selectedAdmNo.trim(), subject: subject.trim(), ca: parseInt(caScore),
-        exam: parseInt(examScore), grade: grade.trim().toUpperCase(), remark: teacherRemark.trim(), teacher_name: teacherName.trim()
-      }]);
+      const { error } = await supabase.from("grades").insert([
+        {
+          admission_no: selectedAdmNo.trim(),
+          subject: subject.trim(),
+          ca: parseInt(caScore),
+          exam: parseInt(examScore),
+          grade: grade.trim().toUpperCase(),
+          remark: teacherRemark.trim(),
+          teacher_name: teacherName.trim()
+        }
+      ]);
       if (error) throw error;
-      alert("Grade added successfully!");
-      setSubject(""); setCaScore(""); setExamScore(""); setGrade(""); setTeacherRemark("");
-    } catch (err: any) { alert(err.message); }
+
+      alert(`Grade added successfully for ${selectedAdmNo}!`);
+      setSubject("");
+      setCaScore("");
+      setExamScore("");
+      setGrade("");
+      setTeacherRemark("");
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handleClearScores = async (admNo: string) => {
-    if (!confirm("Are you sure?")) return;
+    if (!confirm(`Are you sure you want to completely wipe out all grades for student ${admNo}? This cannot be undone.`)) return;
+    
     try {
-      await supabase.from("grades").delete().eq("admission_no", admNo.trim());
-      alert("Scores wiped!");
+      const { error } = await supabase
+        .from("grades")
+        .delete()
+        .eq("admission_no", admNo.trim());
+        
+      if (error) throw error;
+      alert(`All previous grades wiped successfully for ${admNo}!`);
       await fetchStudents();
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handlePromoteOrChange = async (admNo: string, currentClass: string, currentTerm: string) => {
-    const newClass = prompt("Enter new Class:", currentClass);
-    const newTerm = prompt("Enter new Term:", currentTerm);
+    const newClass = prompt("Enter new Class (Leave blank to keep current):", currentClass);
+    const newTerm = prompt("Enter new Term (Leave blank to keep current):", currentTerm);
+    
     if (newClass === null && newTerm === null) return;
+
     try {
       const updates: any = {};
-      if (newClass?.trim()) updates.class = newClass.trim();
-      if (newTerm?.trim()) updates.term = newTerm.trim();
-      await supabase.from("students").update(updates).eq("admission_no", admNo.trim());
-      alert("Updated!");
+      if (newClass && newClass.trim() !== "") updates.class = newClass.trim();
+      if (newTerm && newTerm.trim() !== "") updates.term = newTerm.trim();
+
+      if (Object.keys(updates).length === 0) return;
+
+      const { error } = await supabase
+        .from("students")
+        .update(updates)
+        .eq("admission_no", admNo.trim());
+
+      if (error) throw error;
+      
+      alert("Student profile metadata records synchronized!");
       await fetchStudents();
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handleDeleteStudent = async (admNo: string, name: string) => {
-    if (!confirm(`Delete ${name}?`)) return;
+    if (!confirm(`CRITICAL WARNING: Are you sure you want to completely delete ${name} (${admNo}) from the system? This removes their profile permanently.`)) return;
+    
     try {
       await supabase.from("grades").delete().eq("admission_no", admNo.trim());
-      await supabase.from("students").delete().eq("admission_no", admNo.trim());
-      alert("Deleted!");
+      const { error } = await supabase
+        .from("students")
+        .delete()
+        .eq("admission_no", admNo.trim());
+
+      if (error) throw error;
+
+      alert("Student profile permanently deleted from registry.");
       await fetchStudents();
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md p-6 rounded-3xl border bg-white shadow-sm text-center">
-          <h1 className="text-lg font-black text-primary mb-5 uppercase">Admin Gate Lock</h1>
-          <form onSubmit={handleAdminLogin} className="space-y-3">
-            <Input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="Password" />
-            <Button type="submit" className="w-full">Unlock</Button>
+      <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4 text-foreground font-sans antialiased">
+        <Card className="w-full max-w-md p-6 rounded-3xl border bg-white space-y-5 shadow-sm text-center">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto text-primary">
+            <Lock className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-black text-primary tracking-tight uppercase">Admin Gate Lock</h1>
+          </div>
+          <form onSubmit={handleAdminLogin} className="space-y-3 text-left">
+            <Input 
+              type="password" 
+              placeholder="Enter Staff Admin Password" 
+              value={adminPassword}
+              onChange={e => setAdminPassword(e.target.value)}
+              className="rounded-xl text-xs h-11 font-medium"
+              required
+            />
+            <Button type="submit" className="w-full rounded-xl text-xs font-bold h-11">
+              Verify & Unlock Panel
+            </Button>
           </form>
         </Card>
       </div>
@@ -135,65 +217,123 @@ export default function AdminPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 p-4 md:p-8">
+    <div className="min-h-screen bg-muted/20 p-4 md:p-8 text-foreground font-sans antialiased">
       <div className="max-w-4xl mx-auto space-y-6">
+        
         <header className="flex items-center justify-between border-b pb-4">
-          <h1 className="text-xl font-black text-primary uppercase">Mosh Day School</h1>
-          <Button onClick={fetchStudents} size="sm"><RefreshCw className="w-4 h-4 mr-2" /> Reload</Button>
+          <div>
+            <h1 className="text-xl font-black text-primary tracking-tight uppercase">Mosh Day School</h1>
+            <p className="text-xs text-muted-foreground font-semibold">Centralized Academic Administration Dashboard</p>
+          </div>
+          <Button onClick={fetchStudents} size="sm" variant="outline" className="rounded-xl h-9 gap-1 text-xs font-bold">
+            <RefreshCw className="w-3.5 h-3.5" /> Reload Data
+          </Button>
         </header>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <Card className="p-5 rounded-3xl border bg-white space-y-4">
-            <h2 className="text-xs font-black uppercase text-primary border-b pb-2">Register Student</h2>
+          {/* REGISTER STUDENT */}
+          <Card className="p-5 rounded-3xl border bg-white space-y-4 shadow-xs">
+            <div className="flex items-center gap-2 border-b pb-2">
+              <User className="w-4 h-4 text-primary" />
+              <h2 className="text-xs font-black uppercase text-primary tracking-wide">Register Student Profile</h2>
+            </div>
             <form onSubmit={handleCreateStudent} className="space-y-3">
-              <Input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} />
-              <Input placeholder="Admission No" value={admissionNo} onChange={e => setAdmissionNo(e.target.value)} />
-              <Input placeholder="Class" value={className} onChange={e => setClassName(e.target.value)} />
-              <Input placeholder="Parent Phone" value={parentPhone} onChange={e => setParentPhone(e.target.value)} />
-              <Input placeholder="Set Student Password" value={studentPassword} onChange={e => setStudentPassword(e.target.value)} />
-              <Button type="submit" className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Student</Button>
+              <Input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} className="rounded-xl text-xs h-10" />
+              <Input placeholder="Admission Number" value={admissionNo} onChange={e => setAdmissionNo(e.target.value)} className="rounded-xl text-xs h-10" />
+              <Input placeholder="Class (e.g. Primary 5)" value={className} onChange={e => setClassName(e.target.value)} className="rounded-xl text-xs h-10" />
+              <Input placeholder="Parent Phone Number" value={parentPhone} onChange={e => setParentPhone(e.target.value)} className="rounded-xl text-xs h-10" />
+              <Input placeholder="Set Student Login Password" value={studentPassword} onChange={e => setStudentPassword(e.target.value)} className="rounded-xl text-xs h-10 border-primary" />
+              
+              <select value={term} onChange={e => setTerm(e.target.value)} className="w-full rounded-xl border border-input h-10 px-3 text-xs">
+                <option value="First Term">First Term</option>
+                <option value="Second Term">Second Term</option>
+                <option value="Third Term">Third Term</option>
+              </select>
+              <Button type="submit" className="w-full rounded-xl text-xs font-bold h-10 gap-1.5">
+                <Plus className="w-4 h-4" /> Add Student Record
+              </Button>
             </form>
           </Card>
 
-          <Card className="p-5 rounded-3xl border bg-white space-y-4">
-            <h2 className="text-xs font-black uppercase text-primary border-b pb-2">Upload Scores</h2>
+          {/* UPLOAD GRADES */}
+          <Card className="p-5 rounded-3xl border bg-white space-y-4 shadow-xs">
+            <div className="flex items-center gap-2 border-b pb-2">
+              <Award className="w-4 h-4 text-primary" />
+              <h2 className="text-xs font-black uppercase text-primary tracking-wide">Upload Academic Scores</h2>
+            </div>
             <form onSubmit={handleUploadGrade} className="space-y-3">
-              <select value={selectedAdmNo} onChange={e => setSelectedAdmNo(e.target.value)} className="w-full border rounded-xl p-2 text-xs">
-                <option value="">-- Select Student --</option>
-                {students.map(s => <option key={s.admission_no} value={s.admission_no}>{s.full_name}</option>)}
+              <select 
+                value={selectedAdmNo} 
+                onChange={e => setSelectedAdmNo(e.target.value)}
+                className="w-full rounded-xl border border-input bg-background px-3 h-10 text-xs font-medium"
+              >
+                <option value="">-- Select Target Student --</option>
+                {students.map((s, index) => (
+                  <option key={`${s.admission_no}-${index}`} value={s.admission_no}>{s.full_name}</option>
+                ))}
               </select>
-              <Input placeholder="Subject" value={subject} onChange={e => setSubject(e.target.value)} />
+              <Input placeholder="Subject Name" value={subject} onChange={e => setSubject(e.target.value)} className="rounded-xl text-xs h-10" />
               <div className="grid grid-cols-3 gap-2">
-                <Input placeholder="CA" value={caScore} onChange={e => setCaScore(e.target.value)} />
-                <Input placeholder="Exam" value={examScore} onChange={e => setExamScore(e.target.value)} />
-                <Input placeholder="Grade" value={grade} onChange={e => setGrade(e.target.value)} />
+                <Input type="number" placeholder="CA" value={caScore} onChange={e => setCaScore(e.target.value)} className="rounded-xl text-xs h-10 text-center" />
+                <Input type="number" placeholder="Exam" value={examScore} onChange={e => setExamScore(e.target.value)} className="rounded-xl text-xs h-10 text-center" />
+                <Input placeholder="Grade" value={grade} onChange={e => setGrade(e.target.value)} className="rounded-xl text-xs h-10 text-center" />
               </div>
-              <Input placeholder="Teacher Name" value={teacherName} onChange={e => setTeacherName(e.target.value)} />
-              <Input placeholder="Remark" value={teacherRemark} onChange={e => setTeacherRemark(e.target.value)} />
-              <Button type="submit" className="w-full">Publish</Button>
+              
+              <Input placeholder="Teacher's Name (e.g. Mr. S. Okafor)" value={teacherName} onChange={e => setTeacherName(e.target.value)} className="rounded-xl text-xs h-10" />
+              <Input placeholder="Teacher's Remark" value={teacherRemark} onChange={e => setTeacherRemark(e.target.value)} className="rounded-xl text-xs h-10" />
+
+              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold h-10">
+                Publish Subject Result
+              </Button>
             </form>
           </Card>
         </div>
 
-        <Card className="p-5 rounded-3xl border bg-white">
-          <h2 className="text-xs font-black uppercase text-primary mb-3">System Directory</h2>
-          {loading ? <Loader2 className="animate-spin mx-auto" /> : (
-            <div className="divide-y text-xs">
-              {students.map(s => (
-                <div key={s.admission_no} className="py-3 flex justify-between items-center">
+        {/* SYSTEM DIRECTORY */}
+        <Card className="p-5 rounded-3xl border bg-white shadow-xs">
+          <h2 className="text-xs font-black uppercase text-primary tracking-wide mb-3">Live System Directory</h2>
+          {loading ? (
+            <div className="flex justify-center p-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+          ) : (
+            <div className="divide-y text-xs font-medium max-h-60 overflow-y-auto">
+              {students.map((s, index) => (
+                <div key={`${s.admission_no}-${index}`} className="py-3 flex justify-between items-center gap-2">
                   <div>
-                    <p className="font-bold">{s.full_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.admission_no} • {s.class}</p>
+                    <p className="font-bold text-foreground">{s.full_name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {s.admission_no} &bull;{" "}
+                      <span className="text-primary font-bold">
+                        {s.class} ({s.term})
+                      </span>
+                    </p>
                   </div>
-                  <div className="flex gap-1">
-                    <Button onClick={() => handlePromoteOrChange(s.admission_no, s.class, s.term)} size="sm" variant="outline">Edit</Button>
-                    <Button onClick={() => handleDeleteStudent(s.admission_no, s.full_name)} size="sm" variant="destructive"><Trash2 className="w-3 h-3" /></Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button 
+                      onClick={() => handlePromoteOrChange(s.admission_no, s.class, s.term)}
+                      variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50"
+                    >
+                      Edit Class/Term
+                    </Button>
+                    <Button 
+                      onClick={() => handleClearScores(s.admission_no)}
+                      variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-destructive/20 text-destructive hover:bg-destructive/5"
+                    >
+                      Wipe Scores
+                    </Button>
+                    <Button 
+                      onClick={() => handleDeleteStudent(s.admission_no, s.full_name)}
+                      variant="destructive" size="sm" className="h-7 w-7 rounded-lg p-0 flex items-center justify-center"
+                      title="Delete Student Record Completely"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </Card>
+
       </div>
     </div>
   );
