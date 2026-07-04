@@ -80,7 +80,8 @@ export default function Home() {
       const result = await loginStudent(admissionNo, portalPassword);
       if (result.success) {
         // 3. Replaced alert box with professional route jump!
-        setLocation("/dashboard"); 
+        setLocation(`/dashboard?admissionNo=${encodeURIComponent(admissionNo)}`);
+ 
       } else {
         alert(result.error);
       }
