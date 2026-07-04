@@ -8,7 +8,8 @@ import {
   CheckCircle,
   MessageSquare,
   Loader2,
-  Printer
+  Printer,
+  AlertCircle
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
@@ -25,6 +26,7 @@ export default function Dashboard() {
   };
 
   const handlePrint = () => {
+    if (reportCard.length === 0) return;
     window.print();
   };
 
@@ -80,6 +82,8 @@ export default function Dashboard() {
     );
   }
 
+  const hasGrades = reportCard.length > 0;
+
   return (
     <div className="min-h-screen bg-muted/30 text-foreground antialiased selection:bg-primary/10 print-bg-fix">
       
@@ -95,9 +99,10 @@ export default function Dashboard() {
           <div className="flex items-center gap-1.5">
             <Button 
               onClick={handlePrint}
+              disabled={!hasGrades}
               variant="outline"
               size="sm"
-              className="text-primary border-primary/20 hover:bg-primary/5 text-xs font-bold gap-1.5 px-2.5 rounded-xl h-8"
+              className="text-primary border-primary/20 hover:bg-primary/5 text-xs font-bold gap-1.5 px-2.5 rounded-xl h-8 disabled:opacity-40"
             >
               <Printer className="w-3.5 h-3.5" />
               Print Report
@@ -115,19 +120,21 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* PRESTIGIOUS BLUE-THEMED PRINT ONLY HEADER */}
-      <div className="print-only-header hidden text-center space-y-1 pt-2 mb-3 border-b-2 border-primary pb-2">
-        <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center mx-auto mb-1 shadow-xs">
-          <BookOpen className="w-5 h-5" />
+      {/* --- PRESTIGIOUS PRINT ONLY HEADER (ONLY RENDERS IF GRADES EXIST) --- */}
+      {hasGrades && (
+        <div className="print-only-header hidden text-center space-y-1 pt-2 mb-3 border-b-2 border-primary pb-2">
+          <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center mx-auto mb-1 shadow-xs">
+            <BookOpen className="w-5 h-5" />
+          </div>
+          <h1 className="text-lg font-black text-primary tracking-tight uppercase leading-none">MOSH DAY SCHOOL</h1>
+          <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Nursery &amp; Primary Education &bull; "Best Grooming"</p>
+          <div className="pt-1.5">
+            <span className="bg-primary text-white font-black px-3 py-0.5 text-[9px] rounded-full uppercase tracking-wider">
+              Official Academic Evaluation Terminal Report
+            </span>
+          </div>
         </div>
-        <h1 className="text-lg font-black text-primary tracking-tight uppercase leading-none">MOSH DAY SCHOOL</h1>
-        <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Nursery &amp; Primary Education &bull; "Best Grooming"</p>
-        <div className="pt-1.5">
-          <span className="bg-primary text-white font-black px-3 py-0.5 text-[9px] rounded-full uppercase tracking-wider">
-            Official Academic Evaluation Terminal Report
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* MAIN CONTAINER */}
       <main className="container mx-auto px-4 py-6 max-w-md space-y-4 print-container">
@@ -164,30 +171,30 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* RESULTS TABLE */}
-        <Card className="rounded-3xl border border-border shadow-xs bg-white overflow-hidden print-table-card">
-          <div className="px-4 pt-3 pb-1 border-b border-border/50 flex items-center justify-between no-print">
-            <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-primary" />
-              <h3 className="text-xs font-black uppercase text-primary tracking-wide">Academic Results</h3>
+        {/* RESULTS MODULE */}
+        {hasGrades ? (
+          <Card className="rounded-3xl border border-border shadow-xs bg-white overflow-hidden print-table-card">
+            <div className="px-4 pt-3 pb-1 border-b border-border/50 flex items-center justify-between no-print">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-primary" />
+                <h3 className="text-xs font-black uppercase text-primary tracking-wide">Academic Results</h3>
+              </div>
+              <span className="text-[10px] bg-emerald-50 text-emerald-600 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-100">Released</span>
             </div>
-            <span className="text-[10px] bg-emerald-50 text-emerald-600 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-100">Released</span>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left print:text-[11px]">
-              <thead>
-                <tr className="bg-muted/40 border-b border-border/60 print:bg-primary/10 print:border-slate-300">
-                  <th className="py-2 px-3 text-[10px] font-black text-muted-foreground uppercase tracking-wider print:text-primary">Subject</th>
-                  <th className="py-2 px-1 text-[10px] font-black text-muted-foreground uppercase tracking-wider text-center print:text-slate-700">CA (40)</th>
-                  <th className="py-2 px-1 text-[10px] font-black text-muted-foreground uppercase tracking-wider text-center print:text-slate-700">Exam (60)</th>
-                  <th className="py-2 px-1 text-[10px] font-black text-muted-foreground uppercase tracking-wider text-center print:text-primary">Total</th>
-                  <th className="py-2 px-3 text-[10px] font-black text-muted-foreground uppercase tracking-wider text-right print:text-primary">Grade</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40 text-xs font-medium print:divide-slate-200">
-                {reportCard.length > 0 ? (
-                  reportCard.map((row, idx) => {
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left print:text-[11px]">
+                <thead>
+                  <tr className="bg-muted/40 border-b border-border/60 print:bg-primary/10 print:border-slate-300">
+                    <th className="py-2 px-3 text-[10px] font-black text-muted-foreground uppercase tracking-wider print:text-primary">Subject</th>
+                    <th className="py-2 px-1 text-[10px] font-black text-muted-foreground uppercase tracking-wider text-center print:text-slate-700">CA (40)</th>
+                    <th className="py-2 px-1 text-[10px] font-black text-muted-foreground uppercase tracking-wider text-center print:text-slate-700">Exam (60)</th>
+                    <th className="py-2 px-1 text-[10px] font-black text-muted-foreground uppercase tracking-wider text-center print:text-primary">Total</th>
+                    <th className="py-2 px-3 text-[10px] font-black text-muted-foreground uppercase tracking-wider text-right print:text-primary">Grade</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40 text-xs font-medium print:divide-slate-200">
+                  {reportCard.map((row, idx) => {
                     const totalScore = (row.ca || 0) + (row.exam || 0);
                     return (
                       <tr key={idx} className="hover:bg-muted/10 transition-colors print:hover:bg-transparent">
@@ -206,53 +213,66 @@ export default function Dashboard() {
                         </td>
                       </tr>
                     );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-6 text-center text-xs text-muted-foreground font-bold tracking-wide uppercase">
-                      No subject results uploaded yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : (
+          /* DEFAULT STATE IF NO GRADES HAVE BEEN UPLOADED YET */
+          <Card className="p-8 text-center rounded-3xl border border-dashed border-border bg-white flex flex-col items-center justify-center space-y-3 shadow-xs">
+            <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 border border-amber-100">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xs font-black uppercase tracking-wide text-foreground">Results Processing</h3>
+              <p className="text-[11px] text-muted-foreground font-medium max-w-[240px] mx-auto leading-normal">
+                Academic evaluation ledgers for this terminal cycle are currently under administrative review. Please check back shortly.
+              </p>
+            </div>
+          </Card>
+        )}
 
-        {/* TEACHER REMARK SECTION */}
-        <Card className="p-3 rounded-3xl border border-border shadow-xs bg-white space-y-2 print:border-slate-200 print:p-2.5 print:shadow-none print:bg-white">
-          <div className="flex items-center gap-2 border-b border-border/50 pb-1 no-print">
-            <MessageSquare className="w-4 h-4 text-primary" />
-            <h3 className="text-xs font-black uppercase text-primary tracking-wide">Teacher's Remark</h3>
-          </div>
-          
-          <div className="p-2 bg-muted/40 rounded-2xl border border-border/60 print:bg-transparent print:border-none print:p-0">
-            <p className="text-xs text-foreground/80 italic font-semibold print:text-slate-800">
-              {reportCard.length > 0 
-                ? `"${reportCard[0]?.remark || 'No remark assigned yet.'}"` 
-                : '"No academic record evaluation assigned yet."'}
-            </p>
-            <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-1.5 text-[10px] no-print">
-              <div>
-                <span className="font-bold block text-foreground">Mrs. F. Adegoke</span>
-                <span className="text-muted-foreground font-semibold">Class Teacher Assessment</span>
+        {/* TEACHER REMARK SECTION (ONLY SHOWS IF GRADES EXIST) */}
+        {hasGrades && (
+          <Card className="p-3 rounded-3xl border border-border shadow-xs bg-white space-y-2 print:border-slate-200 print:p-2.5 print:shadow-none print:bg-white">
+            <div className="flex items-center gap-2 border-b border-border/50 pb-1 no-print">
+              <MessageSquare className="w-4 h-4 text-primary" />
+              <h3 className="text-xs font-black uppercase text-primary tracking-wide">Teacher's Remark</h3>
+            </div>
+            
+            <div className="p-2 bg-muted/40 rounded-2xl border border-border/60 print:bg-transparent print:border-none print:p-0">
+              <p className="text-xs text-foreground/80 italic font-semibold print:text-slate-800">
+                "{reportCard[0]?.remark || 'Keep up the brilliant momentum!'}"
+              </p>
+              <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-1.5 text-[10px] no-print">
+                <div>
+                  {/* DYNAMIC TEACHER NAME: Falls back to 'Class Teacher' if column missing */}
+                  <span className="font-bold block text-foreground">{reportCard[0]?.teacher_name || "Mrs. F. Adegoke"}</span>
+                  <span className="text-muted-foreground font-semibold">Class Teacher Assessment</span>
+                </div>
+                <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
               </div>
-              <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+            </div>
+          </Card>
+        )}
+
+        {/* COMPACT OFFICIAL SIGNATURE SIGNOFF STRIP (ONLY SHOWS IF GRADES EXIST) */}
+        {hasGrades && (
+          <div className="print-signoff hidden pt-4 grid grid-cols-2 gap-8 text-center text-[10px] font-bold text-slate-900">
+            <div className="space-y-4">
+              <div className="border-b border-slate-400 w-32 mx-auto h-3"></div>
+              <p className="uppercase text-[8px] tracking-wider text-slate-700">
+                {reportCard[0]?.teacher_name || "Mrs. F. Adegoke"} <br/>
+                <span className="text-[7px] font-medium text-slate-500 lowercase">Class Teacher Signature</span>
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div className="border-b border-slate-400 w-32 mx-auto h-3"></div>
+              <p className="uppercase text-[8px] tracking-wider text-slate-700">School Principal <br/><span className="text-[7px] font-medium text-slate-500 lowercase">Sign &amp; Official Seal</span></p>
             </div>
           </div>
-        </Card>
-
-        {/* COMPACT OFFICIAL SIGNATURE SIGNOFF STRIP */}
-        <div className="print-signoff hidden pt-4 grid grid-cols-2 gap-8 text-center text-[10px] font-bold text-slate-900">
-          <div className="space-y-4">
-            <div className="border-b border-slate-400 w-32 mx-auto h-3"></div>
-            <p className="uppercase text-[8px] tracking-wider text-slate-700">Mrs. F. Adegoke <br/><span className="text-[7px] font-medium text-slate-500 lowercase">Class Teacher Signature</span></p>
-          </div>
-          <div className="space-y-4">
-            <div className="border-b border-slate-400 w-32 mx-auto h-3"></div>
-            <p className="uppercase text-[8px] tracking-wider text-slate-700">School Principal <br/><span className="text-[7px] font-medium text-slate-500 lowercase">Sign &amp; Official Seal</span></p>
-          </div>
-        </div>
+        )}
 
       </main>
 
