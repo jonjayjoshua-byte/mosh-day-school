@@ -32,7 +32,6 @@ export default function Home() {
         alert('Invalid Admission Number or Password');
       } else {
         alert(`Welcome back, ${data.full_name}! 🎉\nClass: ${data.class}\nTerm: ${data.term || 'N/A'}`);
-        // Dashboard redirection logic will hook in here next!
       }
     } catch (err) {
       alert('An unexpected error occurred.');
@@ -67,7 +66,6 @@ export default function Home() {
         alert(error.message);
       } else {
         alert(`Successfully registered profile for ${studentName}! 🚀`);
-        // Reset fields
         setStudentName('');
         setAdmissionNo('');
         setPortalPassword('');
@@ -84,7 +82,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       
-      {/* 1. PROFESSIONAL NAVIGATION HEADER */}
+      {/* 1. PROFESSIONAL NAVIGATION HEADER (Matches 1000353419.jpg perfectly) */}
       <header className="bg-white border-b border-slate-100 py-4 px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="bg-blue-900 text-white p-2.5 rounded-xl flex items-center justify-center shadow-md">
@@ -102,13 +100,88 @@ export default function Home() {
           </div>
         </div>
         
-        <a href="https://wa.me/your-number" target="_blank" rel="noreferrer" className="bg-blue-950 hover:bg-blue-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+        <a href="https://wa.me/your-number" target="_blank" rel="noreferrer" className="bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-1.5">
           Chat on WhatsApp
         </a>
       </header>
 
-      {/* 2. LIVE INTERACTIVE PORTAL SECTION */}
-      <section id="portal" className="py-16 px-4 max-w-6xl mx-auto">
+      {/* 2. SCHOOL HERO IMAGES & FLOATING CARD (Restored from 1000353419.jpg) */}
+      <section className="pt-6 px-4 max-w-xl mx-auto space-y-6">
+        {/* Quality Education Section */}
+        <div className="relative pb-8">
+          <div className="rounded-3xl overflow-hidden shadow-sm">
+            <img 
+              src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=800" 
+              alt="Pupils studying together" 
+              className="w-full h-56 object-cover"
+            />
+          </div>
+          {/* Offset floating card exactly like the screenshot */}
+          <div className="absolute bottom-2 left-0 bg-white py-3 px-5 rounded-2xl shadow-lg border border-slate-100 flex items-center gap-3 max-w-[240px]">
+            <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-orange-400 font-semibold">
+              ✨
+            </div>
+            <div>
+              <h4 className="font-extrabold text-slate-900 text-sm tracking-tight">Quality Education</h4>
+              <p className="text-slate-400 text-[11px] font-medium">Since 2015</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Chess Activity Section */}
+        <div className="rounded-3xl overflow-hidden shadow-sm">
+          <img 
+            src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800" 
+            alt="Pupils training chess strategy" 
+            className="w-full h-56 object-cover"
+          />
+        </div>
+      </section>
+
+      {/* 3. ABOUT THE SCHOOL SECTION */}
+      <section className="py-12 px-6 bg-white border-y border-slate-100 mt-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <h2 className="text-2xl font-black text-blue-950 uppercase tracking-wide mb-2">
+              About Our School
+            </h2>
+            <div className="w-12 h-1 bg-amber-500 mx-auto rounded-full"></div>
+            <p className="text-slate-600 mt-4 text-sm leading-relaxed">
+              Mosh Day School is a premier educational institution dedicated to cultivating a love for learning, critical thinking, and character building in every pupil from early childhood.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="text-2xl mb-2">🎯</div>
+              <h3 className="text-base font-bold text-blue-950 mb-2">Our Mission</h3>
+              <p className="text-slate-600 text-xs leading-relaxed">
+                To provide a stimulating learning environment where children can realize their maximum potential through standard curriculum models, dedicated grooming, and deep character foundations.
+              </p>
+            </div>
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="text-2xl mb-2">👁‍🗨</div>
+              <h3 className="text-base font-bold text-blue-950 mb-2">Our Vision</h3>
+              <p className="text-slate-600 text-xs leading-relaxed">
+                To be a foundational beacon of premium academic excellence, raised to produce morally sound, high-achieving leaders capable of thriving in a globally competitive society.
+              </p>
+            </div>
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="text-2xl mb-2">💎</div>
+              <h3 className="text-base font-bold text-blue-950 mb-2">Core Values</h3>
+              <ul className="text-slate-600 text-xs space-y-1">
+                <li>• Academic Excellence</li>
+                <li>• Moral Integrity & Discipline</li>
+                <li>• Innovation & Critical Thinking</li>
+                <li>• Total Child Care & Safety</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. INTERACTIVE PORTAL SECTION */}
+      <section id="portal" className="py-12 px-4 max-w-6xl mx-auto">
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden grid md:grid-cols-12 max-w-4xl mx-auto">
           
           {/* Left Feature Column */}
@@ -142,7 +215,7 @@ export default function Home() {
               <form onSubmit={handlePortalSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Pupil Full Name</label>
-                  <input type="text" placeholder="Xenization studio" value={studentName} onChange={(e) => setStudentName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm" required />
+                  <input type="text" placeholder="Full name here" value={studentName} onChange={(e) => setStudentName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm" required />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -224,123 +297,58 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. ABOUT THE SCHOOL SECTION */}
-      <section className="py-16 px-6 bg-white border-y border-slate-100">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-3xl font-extrabold text-blue-950 sm:text-4xl mb-3">About Our School</h2>
-            <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full"></div>
-            <p className="text-slate-600 mt-4">
-              Mosh Day School is a premier educational institution dedicated to cultivating a love for learning, critical thinking, and character building in every pupil from early childhood.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-2xl mb-2">🎯</div>
-              <h3 className="text-lg font-bold text-blue-950 mb-2">Our Mission</h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                To provide a stimulating learning environment where children can realize their maximum potential through standard curriculum models, dedicated grooming, and deep character foundations.
-              </p>
-            </div>
-            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-2xl mb-2">👁‍🗨</div>
-              <h3 className="text-lg font-bold text-blue-950 mb-2">Our Vision</h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                To be a foundational beacon of premium academic excellence, raised to produce morally sound, high-achieving leaders capable of thriving in a globally competitive society.
-              </p>
-            </div>
-            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-2xl mb-2">💎</div>
-              <h3 className="text-lg font-bold text-blue-950 mb-2">Core Values</h3>
-              <ul className="text-slate-600 text-sm space-y-1">
-                <li>• Academic Excellence</li>
-                <li>• Moral Integrity & Discipline</li>
-                <li>• Innovation & Critical Thinking</li>
-                <li>• Total Child Care & Safety</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. RESTORED WHY CHOOSE US GRID (ALL 8 CARDS) */}
-      <section className="py-16 px-6 max-w-6xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-3xl font-extrabold text-blue-950 sm:text-4xl mb-3">Why Choose Mosh Day School?</h2>
-          <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full"></div>
-          <p className="text-slate-600 mt-4">
+      {/* 5. WHY CHOOSE US GRID (ALL 8 CARDS) */}
+      <section className="py-12 px-6 max-w-6xl mx-auto">
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <h2 className="text-2xl font-black text-blue-950 uppercase tracking-wide mb-2">Why Choose Mosh Day School?</h2>
+          <div className="w-12 h-1 bg-amber-500 mx-auto rounded-full"></div>
+          <p className="text-slate-600 mt-4 text-sm">
             We provide custom learning structures tailored to ensure your child receives premium attention and holistic developmental care.
           </p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          
-          {/* Card 1 */}
           <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">👨‍🏫</div>
+            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg">👨‍🏫</div>
             <h4 className="font-bold text-blue-950 text-sm mb-1">Qualified Teachers</h4>
-            <p className="text-slate-500 text-xs leading-normal">Highly trained instructors devoted to complete developmental grooming.</p>
+            <p className="text-slate-500 text-[11px] leading-normal">Highly trained instructors devoted to complete developmental grooming.</p>
           </div>
 
-          {/* Card 2 */}
           <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
-            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">💻</div>
+            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg">💻</div>
             <h4 className="font-bold text-blue-950 text-sm mb-1">ICT Learning</h4>
-            <p className="text-slate-500 text-xs leading-normal">Early introduction to tech fundamentals and interactive digital toolsets.</p>
+            <p className="text-slate-500 text-[11px] leading-normal">Early introduction to tech fundamentals and interactive digital toolsets.</p>
           </div>
 
-          {/* Card 3 */}
           <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
-            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">♟</div>
+            <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg">♟</div>
             <h4 className="font-bold text-blue-950 text-sm mb-1">Chess Training</h4>
-            <p className="text-slate-500 text-xs leading-normal">Strategic thinking exercises designed to enhance intellectual capacity.</p>
+            <p className="text-slate-500 text-[11px] leading-normal">Strategic thinking exercises designed to enhance intellectual capacity.</p>
           </div>
 
-          {/* Card 4 */}
           <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
-            <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">⚽</div>
+            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg">⚽</div>
             <h4 className="font-bold text-blue-950 text-sm mb-1">Sports Activities</h4>
-            <p className="text-slate-500 text-xs leading-normal">Healthy physical outdoor activities supporting coordination and teamwork.</p>
+            <p className="text-slate-500 text-[11px] leading-normal">Healthy physical outdoor activities supporting coordination and teamwork.</p>
           </div>
 
-          {/* Card 5 */}
           <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
-            <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">🛡</div>
+            <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg">🛡</div>
             <h4 className="font-bold text-blue-950 text-sm mb-1">Safe Environment</h4>
-            <p className="text-slate-500 text-xs leading-normal">Fully secured structures optimized for absolute parental peace of mind.</p>
+            <p className="text-slate-500 text-[11px] leading-normal">Fully secured structures optimized for absolute parental peace of mind.</p>
           </div>
 
-          {/* Card 6 */}
           <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
-            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">💡</div>
+            <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg">💡</div>
             <h4 className="font-bold text-blue-950 text-sm mb-1">Modern Methods</h4>
-            <p className="text-slate-500 text-xs leading-normal">Using standard educational frameworks to speed up comprehensive understanding.</p>
+            <p className="text-slate-500 text-[11px] leading-normal">Using standard educational frameworks to speed up comprehensive understanding.</p>
           </div>
 
-          {/* Card 7 */}
           <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
-            <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">🎪</div>
+            <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg">🎪</div>
             <h4 className="font-bold text-blue-950 text-sm mb-1">Playground</h4>
-            <p className="text-slate-500 text-xs leading-normal">Equipped dynamic recreational space ensuring cheerful child interactions.</p>
+            <p className="text-slate-500 text-[11px] leading-normal">Equipped dynamic recreational space ensuring cheerful child interactions.</p>
           </div>
 
-          {/* Card 8 */}
           <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm text-center">
-            <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl">🎉</div>
-            <h4 className="font-bold text-blue-950 text-sm mb-1">Special Events</h4>
-            <p className="text-slate-500 text-xs leading-normal">Cultural, creative arts, and award sessions to showcase exceptional talents.</p>
-          </div>
-
-        </div>
-      </section>
-
-      {/* 5. FOOTER */}
-      <footer className="bg-blue-950 text-slate-400 py-8 px-6 text-center text-xs border-t border-blue-900">
-        <p className="font-semibold text-blue-200 mb-1">MOSH DAY SCHOOL — "Best Grooming"</p>
-        <p>&copy; 2026 All Rights Reserved.</p>
-      </footer>
-
-    </div>
-  );
-}
+            <div classN
