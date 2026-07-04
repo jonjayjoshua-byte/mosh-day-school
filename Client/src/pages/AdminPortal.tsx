@@ -3,12 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
-import { Plus, User, Award, Loader2, RefreshCw, Lock, Eye, EyeOff, Trash2 } from "lucide-react";
+import { Plus, User, Award, Loader2, RefreshCw, Lock, Trash2 } from "lucide-react";
 
 export default function AdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +129,7 @@ export default function AdminPortal() {
     }
   };
 
-  // --- UPDATED FOR COMPATIBILITY & FORCE RELOAD ---
+  // --- STRICT CONFIGURATION TARGETING ONLY VALID SCHEMA COLUMNS ---
   const handlePromoteOrChange = async (admNo: string, currentClass: string, currentTerm: string) => {
     const newClass = prompt("Enter new Class (Leave blank to keep current):", currentClass);
     const newTerm = prompt("Enter new Term (Leave blank to keep current):", currentTerm);
@@ -138,16 +137,12 @@ export default function AdminPortal() {
     if (newClass === null && newTerm === null) return;
 
     try {
-      // We pass both variations just in case your database schema uses "student_class" or "current_term"
       const updates: any = {};
-      if (newClass) {
-        updates.class = newClass;
-        updates.student_class = newClass; 
-      }
-      if (newTerm) {
-        updates.term = newTerm;
-        updates.current_term = newTerm;
-      }
+      if (newClass && newClass.trim() !== "") updates.class = newClass.trim();
+      if (newTerm && newTerm.trim() !== "") updates.term = newTerm.trim();
+
+      // Only invoke update if fields were actually altered
+      if (Object.keys(updates).length === 0) return;
 
       const { error } = await supabase
         .from("students")
@@ -157,8 +152,6 @@ export default function AdminPortal() {
       if (error) throw error;
       
       alert("Student profile metadata records synchronized!");
-      
-      // Force an immediate re-fetch from the database to update the view
       await fetchStudents();
       
     } catch (err: any) {
@@ -175,17 +168,14 @@ export default function AdminPortal() {
           </div>
           <div>
             <h1 className="text-lg font-black text-primary tracking-tight uppercase">Admin Gate Lock</h1>
-            <p className="text-xs text-muted-foreground font-semibold px-2 mt-1">
-              This area is restricted to authorized school administrators.
-            </p>
           </div>
           <form onSubmit={handleAdminLogin} className="space-y-3 text-left">
             <Input 
-              type={showPassword ? "text" : "password"} 
+              type="password" 
               placeholder="Enter Staff Admin Password" 
               value={adminPassword}
               onChange={e => setAdminPassword(e.target.value)}
-              className="rounded-xl text-xs h-11 pr-10 font-medium"
+              className="rounded-xl text-xs h-11 font-medium"
               required
             />
             <Button type="submit" className="w-full rounded-xl text-xs font-bold h-11">
@@ -281,13 +271,13 @@ export default function AdminPortal() {
                     <p className="text-[10px] text-muted-foreground">
                       {s.admission_no} &bull;{" "}
                       <span className="text-primary font-bold">
-                        {s.class || s.student_class} ({s.term || s.current_term})
+                        {s.class} ({s.term})
                       </span>
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Button 
-                      onClick={() => handlePromoteOrChange(s.admission_no, s.class || s.student_class, s.term || s.current_term)}
+                      onClick={() => handlePromoteOrChange(s.admission_no, s.class, s.term)}
                       variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50"
                     >
                       Edit Class/Term
@@ -296,7 +286,7 @@ export default function AdminPortal() {
                       onClick={() => handleClearScores(s.admission_no)}
                       variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg border-destructive/20 text-destructive hover:bg-destructive/5"
                     >
-                      <Trash2 className="w-3 h-3" /> Clear Scores
+                      Wipe Scores
                     </Button>
                   </div>
                 </div>
