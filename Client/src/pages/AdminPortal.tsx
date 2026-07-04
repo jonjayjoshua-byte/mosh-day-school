@@ -31,11 +31,17 @@ export default function AdminPortal() {
       const { data, error } = await supabase.from("students").select("*").order("full_name", { ascending: true });
       if (error) throw error;
       setStudents(data || []);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+    } catch (err) { 
+      console.error(err); 
+    }
+    finally { 
+      setLoading(false); 
+    }
   };
 
-  useEffect(() => { if (isAuthenticated) fetchStudents(); }, [isAuthenticated]);
+  useEffect(() => { 
+    if (isAuthenticated) fetchStudents(); 
+  }, [isAuthenticated]);
 
   const calculateGrade = (ca: string, exam: string) => {
     const total = (parseInt(ca) || 0) + (parseInt(exam) || 0);
@@ -46,7 +52,9 @@ export default function AdminPortal() {
     return "F";
   };
 
-  const addRow = () => setGradeRows([...gradeRows, { subject: "", ca: "", exam: "", grade: "" }]);
+  const addRow = () => {
+    setGradeRows([...gradeRows, { subject: "", ca: "", exam: "", grade: "" }]);
+  };
   
   const removeRow = (index: number) => {
     const updated = gradeRows.filter((_, i) => i !== index);
@@ -56,34 +64,56 @@ export default function AdminPortal() {
   const updateRow = (index: number, field: string, value: string) => {
     const updated = [...gradeRows];
     updated[index][field as keyof typeof updated[0]] = value;
+    
     if (field === "ca" || field === "exam") {
       updated[index].grade = calculateGrade(updated[index].ca, updated[index].exam);
     }
+    
     setGradeRows(updated);
   };
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminPassword === "moshadmin2026") setIsAuthenticated(true);
-    else { alert("Invalid Passkey!"); setAdminPassword(""); }
+    if (adminPassword === "moshadmin2026") {
+      setIsAuthenticated(true);
+    } else { 
+      alert("Invalid Passkey!"); 
+      setAdminPassword(""); 
+    }
   };
 
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const { error } = await supabase.from("students").insert([{ 
-        full_name: fullName.trim(), admission_no: admissionNo.trim(), class: className.trim(), 
-        term, parent_phone: parentPhone.trim(), portal_password: studentPassword.trim(), student_password: studentPassword.trim() 
+        full_name: fullName.trim(), 
+        admission_no: admissionNo.trim(), 
+        class: className.trim(), 
+        term: term, 
+        parent_phone: parentPhone.trim(), 
+        portal_password: studentPassword.trim(), 
+        student_password: studentPassword.trim() 
       }]);
+      
       if (error) throw error;
+      
       alert("Student Registered!");
-      setFullName(""); setAdmissionNo(""); setClassName(""); setParentPhone(""); setStudentPassword("");
+      setFullName(""); 
+      setAdmissionNo(""); 
+      setClassName(""); 
+      setParentPhone(""); 
+      setStudentPassword("");
       fetchStudents();
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) { 
+      alert(err.message); 
+    }
   };
 
   const handlePublishAll = async () => {
-    if (!selectedAdmNo || !teacherName) return alert("Select student and enter teacher name!");
+    if (!selectedAdmNo || !teacherName) {
+      return alert("Select student and enter teacher name!");
+    }
+    
     const payload = gradeRows.filter(r => r.subject !== "").map(r => ({
       admission_no: selectedAdmNo, 
       subject: r.subject, 
@@ -93,9 +123,12 @@ export default function AdminPortal() {
       remark: overallRemark,
       teacher_name: teacherName
     }));
+    
     const { error } = await supabase.from("grades").insert(payload);
-    if (error) alert(error.message);
-    else { 
+    
+    if (error) {
+      alert(error.message);
+    } else { 
       alert("Published!"); 
       setGradeRows([{ subject: "", ca: "", exam: "", grade: "" }]);
       setOverallRemark("");
@@ -105,7 +138,10 @@ export default function AdminPortal() {
   const handleResetPassword = async (admNo: string, name: string) => {
     const newPassword = prompt(`New password for ${name}:`);
     if (newPassword) {
-      await supabase.from("students").update({ portal_password: newPassword, student_password: newPassword }).eq("admission_no", admNo);
+      await supabase.from("students").update({ 
+        portal_password: newPassword, 
+        student_password: newPassword 
+      }).eq("admission_no", admNo);
       fetchStudents();
     }
   };
@@ -118,22 +154,32 @@ export default function AdminPortal() {
     }
   };
 
-  if (!isAuthenticated) return (
-    <div className="min-h-screen bg-muted/20 flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm p-6 rounded-3xl text-center">
-        <Lock className="w-10 h-10 mx-auto text-primary mb-4" />
-        <Input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="Admin Passkey" className="mb-3" />
-        <Button onClick={handleAdminLogin} className="w-full">Unlock Panel</Button>
-      </Card>
-    </div>
-  );
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-muted/20 flex items-center justify-center p-4">
+        <Card className="w-full max-w-sm p-6 rounded-3xl text-center">
+          <Lock className="w-10 h-10 mx-auto text-primary mb-4" />
+          <Input 
+            type="password" 
+            value={adminPassword} 
+            onChange={e => setAdminPassword(e.target.value)} 
+            placeholder="Admin Passkey" 
+            className="mb-3" 
+          />
+          <Button onClick={handleAdminLogin} className="w-full">Unlock Panel</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/20 p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <header className="flex justify-between items-center pb-4 border-b">
           <h1 className="text-xl font-black text-primary uppercase">Admin Portal</h1>
-          <Button onClick={fetchStudents} variant="outline" size="sm"><RefreshCw className="w-4 h-4 mr-2" /> Reload</Button>
+          <Button onClick={fetchStudents} variant="outline" size="sm">
+            <RefreshCw className="w-4 h-4 mr-2" /> Reload
+          </Button>
         </header>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -174,25 +220,40 @@ export default function AdminPortal() {
                     <Input placeholder="Ex" value={row.exam} onChange={e => updateRow(i, "exam", e.target.value)} className="text-[10px]" />
                     <Input placeholder="Gr" value={row.grade} onChange={e => updateRow(i, "grade", e.target.value)} className="text-[10px]" />
                   </div>
-                  <Button onClick={() => removeRow(i)} variant="ghost" size="sm" className="text-red-500 p-2"><X className="w-4 h-4" /></Button>
+                  <Button onClick={() => removeRow(i)} variant="ghost" size="sm" className="text-red-500 p-2">
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
               ))}
               <Button onClick={addRow} variant="outline" size="sm" className="w-full text-xs">+ Add Subject Row</Button>
             </div>
-            <Button onClick={handlePublishAll} className="w-full bg-emerald-600"><Save className="w-4 h-4 mr-2" /> Publish All Subjects</Button>
+            <Button onClick={handlePublishAll} className="w-full bg-emerald-600">
+              <Save className="w-4 h-4 mr-2" /> Publish All Subjects
+            </Button>
           </Card>
         </div>
 
         <Card className="p-5 rounded-3xl border bg-white">
           <h2 className="text-xs font-black uppercase text-primary mb-3">System Directory</h2>
-          {loading ? <Loader2 className="animate-spin mx-auto" /> : (
+          {loading ? (
+            <div className="flex justify-center p-4">
+              <Loader2 className="animate-spin w-6 h-6 text-primary" />
+            </div>
+          ) : (
             <div className="divide-y text-xs">
               {students.map(s => (
                 <div key={s.admission_no} className="py-3 flex justify-between items-center">
-                  <div><p className="font-bold">{s.full_name}</p><p className="text-[10px] text-muted-foreground">{s.admission_no} • Pass: {s.portal_password}</p></div>
+                  <div>
+                    <p className="font-bold">{s.full_name}</p>
+                    <p className="text-[10px] text-muted-foreground">{s.admission_no} • Pass: {s.portal_password}</p>
+                  </div>
                   <div className="flex gap-1">
-                    <Button onClick={() => handleResetPassword(s.admission_no, s.full_name)} size="sm" variant="ghost"><KeyRound className="w-4 h-4 text-blue-600" /></Button>
-                    <Button onClick={() => handleDeleteStudent(s.admission_no)} size="sm" variant="destructive"><Trash2 className="w-4 h-4" /></Button>
+                    <Button onClick={() => handleResetPassword(s.admission_no, s.full_name)} size="sm" variant="ghost">
+                      <KeyRound className="w-4 h-4 text-blue-600" />
+                    </Button>
+                    <Button onClick={() => handleDeleteStudent(s.admission_no)} size="sm" variant="destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
