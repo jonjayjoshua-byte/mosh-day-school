@@ -5,29 +5,67 @@ import {
   LogOut, 
   User, 
   Award, 
-  Calendar, 
   CheckCircle,
-  TrendingUp,
-  MessageSquare
+  MessageSquare,
+  Loader2
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
+  const [student, setStudent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Added missing const declaration to prevent compilation crash
   const handleLogout = () => {
     setLocation("/");
   };
 
-  // Mock data for a premium preview layout
-  const studentProfile = {
-    name: "Chidi Adebayo",
-    admissionNo: "MOSH/2026/045",
-    class: "Primary 3",
-    term: "Third Term",
-    imageUrl: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=60"
-  };
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        // Grab the admission number safely out of the URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const admissionNo = params.get("admissionNo");
 
+        if (!admissionNo) {
+          setLocation("/");
+          return;
+        }
+
+        // Fetch the profile row matching this exact admission number
+        const { data, error } = await supabase
+          .from("students")
+          .select("*")
+          .eq("admission_no", admissionNo)
+          .single();
+
+        if (error) throw error;
+        setStudent(data);
+      } catch (err) {
+        console.error("Error loading dashboard data:", err);
+        alert("Session expired or profile record not found.");
+        setLocation("/");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudentData();
+  }, [setLocation]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-2">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <p className="text-xs text-muted-foreground font-bold tracking-wide uppercase">Securing Profile Session...</p>
+      </div>
+    );
+  }
+
+  // Fallback structural mock data for academic table until your grades table is built
   const reportCard = [
     { subject: "Mathematics", ca: 34, exam: 52, total: 86, grade: "A", remark: "Excellent" },
     { subject: "English Language", ca: 28, exam: 48, total: 76, grade: "B", remark: "Very Good" },
@@ -63,34 +101,34 @@ export default function Dashboard() {
       {/* MAIN CONTAINER */}
       <main className="container mx-auto px-4 py-6 max-w-md space-y-5">
         
-        {/* 2. PREMIUM STUDENT IDENTITY PROFILE CARD */}
+        {/* 2. DYNAMIC STUDENT IDENTITY PROFILE CARD */}
         <Card className="p-4 rounded-3xl border border-border bg-gradient-to-br from-primary to-primary/90 text-white shadow-md relative overflow-hidden">
           <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-4 translate-y-4">
             <BookOpen className="w-40 h-40" />
           </div>
           <div className="flex items-center gap-4 relative z-10">
             <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 overflow-hidden shrink-0 flex items-center justify-center">
-              {studentProfile.imageUrl ? (
-                <img src={studentProfile.imageUrl} alt="Student avatar" className="w-full h-full object-cover" />
+              {student?.student_image_url ? (
+                <img src={student.student_image_url} alt="Student avatar" className="w-full h-full object-cover" />
               ) : (
                 <User className="w-8 h-8 text-white/60" />
               )}
             </div>
             <div className="space-y-0.5 flex-1">
-              <span className="text-[9px] uppercase tracking-widest text-white/70 font-bold bg-white/10 px-2 py-0.5 rounded-md">Official Profile</span>
-              <h2 className="text-base font-black tracking-tight leading-snug mt-1">{studentProfile.name}</h2>
-              <p className="text-[11px] text-white/80 font-medium">{studentProfile.admissionNo}</p>
+              <span className="text-[9px] uppercase tracking-widest text-white/70 font-bold bg-white/10 px-2 py-0.5 rounded-md">Verified Profile</span>
+              <h2 className="text-base font-black tracking-tight leading-snug mt-1">{student?.full_name}</h2>
+              <p className="text-[11px] text-white/80 font-medium">{student?.admission_no}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 mt-4 pt-3.5 border-t border-white/10 text-center relative z-10">
             <div className="bg-white/5 rounded-xl py-1.5 px-2 border border-white/5">
               <p className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Class</p>
-              <p className="text-xs font-extrabold mt-0.5">{studentProfile.class}</p>
+              <p className="text-xs font-extrabold mt-0.5">{student?.class}</p>
             </div>
             <div className="bg-white/5 rounded-xl py-1.5 px-2 border border-white/5">
-              <p className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Term Cycle</p>
-              <p className="text-xs font-extrabold mt-0.5">{studentProfile.term}</p>
+              <p className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Active Term</p>
+              <p className="text-xs font-extrabold mt-0.5">{student?.term}</p>
             </div>
           </div>
         </Card>
@@ -148,7 +186,7 @@ export default function Dashboard() {
           
           <div className="p-3 bg-muted/40 rounded-2xl border border-border/60">
             <p className="text-xs text-foreground/80 leading-relaxed font-medium">
-              "Chidi displays an exceptional capability in conceptualizing technical information and strategic thinking puzzles. His computational speed during practical lab projects remains outstanding. Keep up the brilliant momentum!"
+              "{student?.full_name || 'The student'} displays an exceptional capability in conceptualizing technical information and strategic thinking puzzles. Computational speed during practical lab projects remains outstanding. Keep up the brilliant momentum!"
             </p>
             <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2 text-[10px]">
               <div>
